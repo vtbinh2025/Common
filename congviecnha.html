@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lịch Việc Nhà Mùa Hè Của Ông Bà</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background-color: #f4f6f9; font-size: 13px; }
+        .table-responsive { max-height: 85vh; overflow-y: auto; }
+        
+        /* Mở rộng độ rộng cột để chứa vừa 3 checkbox nằm ngang */
+        .day-column { min-width: 175px; width: 175px; }
+        .task-row:hover { background-color: #f1f3f5; }
+        
+        /* Giao diện 3 Checkbox người làm xếp HÀNG NGANG */
+        .user-checkbox-group {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-around;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 4px;
+            background: #fff;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+            width: 100%;
+        }
+        .user-lbl {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            font-size: 12px;
+            cursor: pointer;
+            margin: 0;
+        }
+        .user-lbl input { width: 14px; height: 14px; cursor: pointer; margin: 0; }
+        
+        /* Màu nền cột ngày HIỆN TẠI (Hôm nay) */
+        .current-day-column {
+            background-color: #e8f0fe !important; /* Màu xanh dương nhạt để làm nổi bật cột hôm nay */
+        }
+        th.current-day-column {
+            background-color: #1a73e8 !important; /* Tiêu đề cột hôm nay đậm hơn */
+            color: white !important;
+        }
+        
+        /* Màu nền khi có người hoàn thành (đè lên nền của group check) */
+        .bg-bi { background-color: #e2f0d9 !important; color: #385723; }
+        .bg-mi { background-color: #fff2cc !important; color: #7f6000; }
+        .bg-khac { background-color: #fce4d6 !important; color: #c65911; }
+        .bg-multi { background-color: #e1f5fe !important; color: #0288d1; }
+        
+        .header-title { background: linear-gradient(45deg, #198754, #20c997); color: white; padding: 15px; border-radius: 8px; }
+        .btn-xs { padding: 1px 5px; font-size: 11px; }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid py-3">
+    <div class="header-title shadow-sm mb-3 d-flex flex-wrap justify-content-between align-items-center">
+        <div>
+            <h4 class="mb-1"><i class="fa-solid fa-list-check me-2"></i>Bảng Phân Công Việc Nhà Cho Trẻ 15 Tuổi</h4>
+            <p class="mb-0 small text-light">Tự động đồng bộ thời gian thực giữa các thiết bị</p>
+        </div>
+        <div class="d-flex gap-2 mt-2 mt-md-0 flex-wrap">
+            <button class="btn btn-light btn-sm fw-bold" onclick="changeWeek(-1)"><i class="fa-solid fa-chevron-left"></i> Tuần trước</button>
+            <span id="current-week-label" class="btn btn-dark btn-sm fw-bold disabled text-white">Đang tải...</span>
+            <button class="btn btn-light btn-sm fw-bold" onclick="changeWeek(1)">Tuần sau <i class="fa-solid fa-chevron-right"></i></button>
+            <!-- <button class="btn btn-danger btn-sm fw-bold" onclick="clearAllData()"><i class="fa-solid fa-trash-can"></i> Xóa hết dữ liệu Server</button> -->
+        </div>
+    </div>
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-bordered align-middle mb-0 text-center">
+                <thead class="table-dark sticky-top">
+                    <tr>
+                        <th class="text-start" style="min-width: 280px;">Tên Công Việc</th>
+                        <th id="th-t2" class="day-column">Thứ 2<br><small id="d-t2"></small></th>
+                        <th id="th-t3" class="day-column">Thứ 3<br><small id="d-t3"></small></th>
+                        <th id="th-t4" class="day-column">Thứ 4<br><small id="d-t4"></small></th>
+                        <th id="th-t5" class="day-column">Thứ 5<br><small id="d-t5"></small></th>
+                        <th id="th-t6" class="day-column">Thứ 6<br><small id="d-t6"></small></th>
+                        <th id="th-t7" class="day-column">Thứ 7<br><small id="d-t7"></small></th>
+                        <th id="th-cn" class="day-column">Chủ Nhật<br><small id="d-cn"></small></th>
+                    </tr>
+                </thead>
+                <tbody id="task-table-body">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+	    <div class="card mb-3 shadow-sm">
+        <div class="card-body p-2">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text bg-primary text-white fw-bold"><i class="fa-solid fa-plus me-1"></i> Thêm việc mới:</span>
+                <input type="text" id="new-task-name" class="form-control" placeholder="Nhập tên việc nhà cần làm vào đây...">
+                <button class="btn btn-primary fw-bold" type="button" onclick="addNewTask()">Lưu Lại</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
+<script>
+    // --- 1. ĐÃ TÍCH HỢP CẤU HÌNH FIREBASE THẬT CỦA BẠN ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyBIS1gLoK2YPENOalSPt1e3UQXJmrAjG2s",
+        authDomain: "congviecnha-a3b57.firebaseapp.com",
+        databaseURL: "https://congviecnha-a3b57-default-rtdb.firebaseio.com",
+        projectId: "congviecnha-a3b57",
+        storageBucket: "congviecnha-a3b57.firebasestorage.app",
+        messagingSenderId: "47627686611",
+        appId: "1:47627686611:web:06ba69555be0a168f13a26",
+        measurementId: "G-VRZ5GX5MQR"
+    };
+    
+    // Khởi tạo Firebase trực tiếp
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // --- 2. KHỞI TẠO BIẾN TOÀN CỤC ---
+    let currentWeekOffset = 0; 
+    let activeDayIndexes = []; // Lưu trữ mốc index xem ngày nào trùng ngày hôm nay
+    
+    // 17 việc mặc định (Luôn luôn hiển thị)
+    const defaultTasks = [
+        { id: "d1", name: "1. Nấu cơm / Vo gạo cắm điện nồi cơm", isDefault: true },
+        { id: "d2", name: "2. Quét nhà trong", isDefault: true },
+        { id: "d3", name: "3. Quét sân", isDefault: true },
+        { id: "d4", name: "4. Cho gà ăn", isDefault: true },
+        { id: "d5", name: "5. Cho cá ăn", isDefault: true },
+        { id: "d6", name: "6. Đổ rác ra vườn", isDefault: true },
+        { id: "d7", name: "7. Đi chợ sáng", isDefault: true },
+        { id: "d8", name: "8. Nấu đồ ăn sáng", isDefault: true },
+        { id: "d9", name: "9. Rửa và úp chén sáng", isDefault: true },
+        { id: "d10", name: "10. Giặt đồ sáng / Bấm giặt sáng", isDefault: true },
+        { id: "d11", name: "11. Phơi đồ sáng", isDefault: true },
+        { id: "d12", name: "12. Tưới cây sáng", isDefault: true },
+        { id: "d13", name: "13. Nấu ăn trưa", isDefault: true },
+        { id: "d14", name: "14. Nấu ăn chiều", isDefault: true },
+        { id: "d15", name: "15. Thu chén khô", isDefault: true },
+        { id: "d16", name: "16. Thu đồ khô cất", isDefault: true },
+        { id: "d17", name: "17. Tưới cây chiều", isDefault: true }
+    ];
+
+    let customTasks = []; 
+    let logsData = {};    
+
+    // --- 3. ĐIỀU HƯỚNG THỜI GIAN & LOGIC LỌC NGÀY ---
+    function getStartOfWeek(offset) {
+        let now = new Date();
+        let day = now.getDay();
+        let diff = now.getDate() - day + (day === 0 ? -6 : 1); // Đưa về Thứ 2
+        let startOfWeek = new Date(now.getFullYear(), now.getMonth(), diff);
+        startOfWeek.setDate(startOfWeek.getDate() + (offset * 7));
+        return startOfWeek;
+    }
+
+    function getWeekKey(startDate) {
+        return `W_${startDate.getFullYear()}_${startDate.getMonth()+1}_${startDate.getDate()}`;
+    }
+
+    function updateCalendarDates() {
+        let start = getStartOfWeek(currentWeekOffset);
+        const daysId = ['d-t2', 'd-t3', 'd-t4', 'd-t5', 'd-t6', 'd-t7', 'd-cn'];
+        const headersId = ['th-t2', 'th-t3', 'th-t4', 'th-t5', 'th-t6', 'th-t7', 'th-cn'];
+        
+        let today = new Date();
+        let todayStr = today.getDate() + '/' + (today.getMonth() + 1) + '/' + today.getFullYear();
+        activeDayIndexes = []; // Reset danh sách cột hôm nay
+
+        for (let i = 0; i < 7; i++) {
+            let currentDay = new Date(start);
+            currentDay.setDate(start.getDate() + i);
+            
+            let curDayStr = currentDay.getDate() + '/' + (currentDay.getMonth() + 1);
+            let curFullDayStr = currentDay.getDate() + '/' + (currentDay.getMonth() + 1) + '/' + currentDay.getFullYear();
+            
+            document.getElementById(daysId[i]).innerText = curDayStr;
+            
+            // Xóa màu cột cũ trước khi check lại
+            document.getElementById(headersId[i]).classList.remove('current-day-column');
+
+            // Kiểm tra xem ngày của cột có phải là ngày hôm nay không
+            if (curFullDayStr === todayStr) {
+                document.getElementById(headersId[i]).classList.add('current-day-column');
+                activeDayIndexes.push(i); // Lưu lại vị trí cột hôm nay
+            }
+        }
+        
+        let end = new Date(start);
+        end.setDate(start.getDate() + 6);
+        document.getElementById('current-week-label').innerText = `Tuần: ${start.getDate()}/${start.getMonth()+1} - ${end.getDate()}/${end.getMonth()+1}`;
+    }
+
+    function changeWeek(direction) {
+        currentWeekOffset += direction;
+        updateCalendarDates();
+        renderTable();
+    }
+
+    // --- 4. KẾT NỐI SERVER ---
+    function initDataListener() {
+        db.ref('customTasks').on('value', snapshot => {
+            customTasks = snapshot.val() || [];
+            renderTable();
+        });
+        db.ref('logsData').on('value', snapshot => {
+            logsData = snapshot.val() || {};
+            renderTable();
+        });
+    }
+
+    function saveData(path, data) {
+        db.ref(path).set(data);
+    }
+
+    // --- 5. RENDER BẢNG & LOGIC HIỂN THỊ BIẾN THIÊN ---
+    function renderTable() {
+        const tbody = document.getElementById('task-table-body');
+        tbody.innerHTML = '';
+        
+        let startOfWeek = getStartOfWeek(currentWeekOffset);
+        let startOfWeekTime = new Date(startOfWeek.getFullYear(), startOfWeek.getMonth(), startOfWeek.getDate()).getTime();
+        
+        let currentWeekKey = getWeekKey(startOfWeek);
+        let allTasks = [...defaultTasks];
+
+        // Lọc việc tự thêm theo điều kiện ngày hiển thị
+        customTasks.forEach(task => {
+            let taskStartTime = new Date(task.startDate).getTime();
+            let endOfWeekTime = startOfWeekTime + (7 * 24 * 60 * 60 * 1000);
+            let isStarted = taskStartTime < endOfWeekTime;
+
+            let isNotEndedYet = true;
+            if (task.endDate) {
+                let taskEndTime = new Date(task.endDate).getTime();
+                if (taskEndTime < startOfWeekTime) {
+                    isNotEndedYet = false; 
+                }
+            }
+
+            if (isStarted && isNotEndedYet) {
+                allTasks.push(task);
+            }
+        });
+
+        // Vẽ từng hàng công việc
+        allTasks.forEach(task => {
+            let rowHtml = `<tr class="task-row">`;
+            
+            // Cột Tên việc + Nút chức năng
+            rowHtml += `<td class="text-start fw-semibold p-2">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span>${task.name}</span>
+                    ${!task.isDefault ? `
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-warning btn-xs" onclick="stopShowingNextWeek('${task.id}')" title="Không hiển thị từ tuần sau">
+                                <i class="fa-solid fa-eye-slash"></i> Ẩn từ tuần sau
+                            </button>
+                            <button class="btn btn-link text-danger p-0 px-1" onclick="deleteTask('${task.id}')" title="Xóa vĩnh viễn"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
+                    ` : ''}
+                </div>
+            </td>`;
+
+            // Vòng lặp vẽ 7 ô từ T2 -> CN
+            for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+                let logKey = `${task.id}_${dayIndex}`;
+                let weekLogs = logsData[currentWeekKey] || {};
+                let cellData = weekLogs[logKey] || { Bi: false, Mi: false, Khac: false };
+
+                // Tính class màu nền dựa vào người được tích chọn hoặc ngày hiện tại
+                let cellClasses = [];
+                
+                // Nếu cột này trùng ngày hôm nay, thêm class tô màu cột hiện tại trước
+                if (activeDayIndexes.includes(dayIndex)) {
+                    cellClasses.push('current-day-column');
+                }
+
+                let checkedCount = [cellData.Bi, cellData.Mi, cellData.Khac].filter(Boolean).length;
+                if (checkedCount > 1) cellClasses.push('bg-multi');
+                else if (cellData.Bi) cellClasses.push('bg-bi');
+                else if (cellData.Mi) cellClasses.push('bg-mi');
+                else if (cellData.Khac) cellClasses.push('bg-khac');
+
+                rowHtml += `<td class="${cellClasses.join(' ')} p-1">
+                    <div class="user-checkbox-group">
+                        <label class="user-lbl">
+                            <input type="checkbox" ${cellData.Bi ? 'checked' : ''} onchange="onUserCheckChange('${task.id}', ${dayIndex}, 'Bi', this.checked)">
+                            <span>Bi</span>
+                        </label>
+                        <label class="user-lbl">
+                            <input type="checkbox" ${cellData.Mi ? 'checked' : ''} onchange="onUserCheckChange('${task.id}', ${dayIndex}, 'Mi', this.checked)">
+                            <span>Mi</span>
+                        </label>
+                        <label class="user-lbl">
+                            <input type="checkbox" ${cellData.Khac ? 'checked' : ''} onchange="onUserCheckChange('${task.id}', ${dayIndex}, 'Khac', this.checked)">
+                            <span>Khác</span>
+                        </label>
+                    </div>
+                </td>`;
+            }
+
+            rowHtml += `</tr>`;
+            tbody.insertAdjacentHTML('beforeend', rowHtml);
+        });
+    }
+
+    // --- 6. XỬ LÝ SỰ KIỆN TƯƠNG TÁC GIAO DIỆN ---
+    function onUserCheckChange(taskId, dayIndex, user, isChecked) {
+        let startOfWeek = getStartOfWeek(currentWeekOffset);
+        let currentWeekKey = getWeekKey(startOfWeek);
+
+        if (!logsData[currentWeekKey]) logsData[currentWeekKey] = {};
+        if (!logsData[currentWeekKey][`${taskId}_${dayIndex}`]) {
+            logsData[currentWeekKey][`${taskId}_${dayIndex}`] = { Bi: false, Mi: false, Khac: false };
+        }
+
+        logsData[currentWeekKey][`${taskId}_${dayIndex}`][user] = isChecked;
+        saveData('logsData', logsData);
+    }
+
+    function addNewTask() {
+        const nameInput = document.getElementById('new-task-name');
+        let name = nameInput.value.trim();
+        if (!name) return alert('Bạn chưa nhập tên công việc!');
+
+        let today = new Date();
+        let todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+
+        let newTask = {
+            id: "custom_" + Date.now(),
+            name: name,
+            isDefault: false,
+            startDate: todayStr, 
+            endDate: null        
+        };
+
+        customTasks.push(newTask);
+        saveData('customTasks', customTasks);
+        nameInput.value = '';
+    }
+
+    function stopShowingNextWeek(taskId) {
+        let today = new Date();
+        let todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+
+        customTasks = customTasks.map(t => {
+            if (t.id === taskId) {
+                t.endDate = todayStr; 
+            }
+            return t;
+        });
+        saveData('customTasks', customTasks);
+        alert("Đã thiết lập! Việc này sẽ vẫn hiện ở tuần này và ẩn đi từ các tuần sau.");
+    }
+
+    function deleteTask(taskId) {
+        if(confirm("Xóa vĩnh viễn việc tự thêm này (bao gồm cả lịch sử đã làm)?")) {
+            customTasks = customTasks.filter(t => t.id !== taskId);
+            saveData('customTasks', customTasks);
+        }
+    }
+
+    function clearAllData() {
+        if (confirm("Hành động này sẽ xóa SẠCH TOÀN BỘ dữ liệu công việc thêm mới và nhật ký trên Server. Bạn chắc chắn chứ?")) {
+            db.ref('/').remove().then(() => location.reload());
+        }
+    }
+
+    window.onload = function() {
+        updateCalendarDates();
+        initDataListener();
+    };
+</script>
+</body>
+</html>
