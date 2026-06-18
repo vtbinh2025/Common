@@ -8,10 +8,40 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { background-color: #f4f6f9; font-size: 13px; }
-        .table-responsive { max-height: 85vh; overflow-y: auto; }
         
-        /* Mở rộng độ rộng cột để chứa vừa 3 checkbox nằm ngang */
-        .day-column { min-width: 175px; width: 175px; }
+        /* Khung chứa bảng cuộn ngang mượt mà trên điện thoại */
+        .table-responsive { 
+            max-height: 85vh; 
+            overflow-y: auto; 
+            overflow-x: auto;
+            position: relative;
+        }
+
+        /* CỐ ĐỊNH CỘT TÊN CÔNG VIỆC Ở MÉP TRÁI */
+        .sticky-col {
+            position: -webkit-sticky;
+            position: sticky;
+            left: 0;
+            background-color: #ffffff !important;
+            z-index: 10;
+            /* Thiết lập độ rộng nhỏ nhất có thể, tự động xuống dòng chữ */
+            min-width: 140px !important;
+            max-width: 160px !important;
+            width: 140px !important;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1); /* Tạo bóng đổ nhẹ để phân tách khi cuộn */
+            word-wrap: break-word;
+            white-space: normal !important;
+        }
+
+        /* Tiêu đề góc trên cùng bên trái cần z-index cao hơn để không bị đè lên khi cuộn cả 2 chiều */
+        th.sticky-col {
+            z-index: 11 !important;
+            background-color: #212529 !important; /* Trùng màu th-dark mặc định */
+            color: white !important;
+        }
+        
+        /* Độ rộng các cột ngày được căn chỉnh tối ưu */
+        .day-column { min-width: 165px; width: 165px; }
         .task-row:hover { background-color: #f1f3f5; }
         
         /* Giao diện 3 Checkbox người làm xếp HÀNG NGANG */
@@ -20,8 +50,8 @@
             flex-direction: row;
             justify-content: space-around;
             align-items: center;
-            gap: 4px;
-            padding: 6px 4px;
+            gap: 2px;
+            padding: 6px 2px;
             background: #fff;
             border-radius: 6px;
             border: 1px solid #dee2e6;
@@ -30,30 +60,36 @@
         .user-lbl {
             display: flex;
             align-items: center;
-            gap: 3px;
-            font-size: 12px;
+            gap: 2px;
+            font-size: 11px;
             cursor: pointer;
             margin: 0;
         }
-        .user-lbl input { width: 14px; height: 14px; cursor: pointer; margin: 0; }
+        .user-lbl input { width: 13px; height: 13px; cursor: pointer; margin: 0; }
         
         /* Màu nền cột ngày HIỆN TẠI (Hôm nay) */
         .current-day-column {
-            background-color: #e8f0fe !important; /* Màu xanh dương nhạt để làm nổi bật cột hôm nay */
+            background-color: #e8f0fe !important; 
         }
         th.current-day-column {
-            background-color: #1a73e8 !important; /* Tiêu đề cột hôm nay đậm hơn */
+            background-color: #1a73e8 !important; 
             color: white !important;
         }
+
+        /* Khi cuộn, giữ cột hôm nay sáng màu nhưng th-sticky-col không bị đè */
+        tr:hover .sticky-col {
+            background-color: #f1f3f5 !important;
+        }
         
-        /* Màu nền khi có người hoàn thành (đè lên nền của group check) */
+        /* Màu nền khi có người hoàn thành */
         .bg-bi { background-color: #e2f0d9 !important; color: #385723; }
         .bg-mi { background-color: #fff2cc !important; color: #7f6000; }
         .bg-khac { background-color: #fce4d6 !important; color: #c65911; }
         .bg-multi { background-color: #e1f5fe !important; color: #0288d1; }
         
         .header-title { background: linear-gradient(45deg, #198754, #20c997); color: white; padding: 15px; border-radius: 8px; }
-        .btn-xs { padding: 1px 5px; font-size: 11px; }
+        .btn-xs { padding: 1px 4px; font-size: 10px; line-height: 1.2; }
+        .task-text { font-size: 12px; display: block; line-height: 1.3; }
     </style>
 </head>
 <body>
@@ -61,22 +97,22 @@
 <div class="container-fluid py-3">
     <div class="header-title shadow-sm mb-3 d-flex flex-wrap justify-content-between align-items-center">
         <div>
-            <h4 class="mb-1"><i class="fa-solid fa-list-check me-2"></i>Bảng Phân Công Việc Nhà Cho Trẻ 15 Tuổi</h4>
+            <h4 class="mb-1"><i class="fa-solid fa-list-check me-2"></i>Bảng Phân Công Việc Nhà Cho Trẻ 13, 15 Tuổi</h4>
             <p class="mb-0 small text-light">Tự động đồng bộ thời gian thực giữa các thiết bị</p>
         </div>
         <div class="d-flex gap-2 mt-2 mt-md-0 flex-wrap">
             <button class="btn btn-light btn-sm fw-bold" onclick="changeWeek(-1)"><i class="fa-solid fa-chevron-left"></i> Tuần trước</button>
             <span id="current-week-label" class="btn btn-dark btn-sm fw-bold disabled text-white">Đang tải...</span>
             <button class="btn btn-light btn-sm fw-bold" onclick="changeWeek(1)">Tuần sau <i class="fa-solid fa-chevron-right"></i></button>
-            <!-- <button class="btn btn-danger btn-sm fw-bold" onclick="clearAllData()"><i class="fa-solid fa-trash-can"></i> Xóa hết dữ liệu Server</button> -->
-        </div>
+            </div>
     </div>
-    <div class="card shadow-sm">
+
+    <div class="card shadow-sm mb-3">
         <div class="table-responsive">
             <table class="table table-bordered align-middle mb-0 text-center">
                 <thead class="table-dark sticky-top">
                     <tr>
-                        <th class="text-start" style="min-width: 280px;">Tên Công Việc</th>
+                        <th class="text-start sticky-col">Tên Công Việc (Chọn ô để ghi công &searr;)</th>
                         <th id="th-t2" class="day-column">Thứ 2<br><small id="d-t2"></small></th>
                         <th id="th-t3" class="day-column">Thứ 3<br><small id="d-t3"></small></th>
                         <th id="th-t4" class="day-column">Thứ 4<br><small id="d-t4"></small></th>
@@ -91,7 +127,8 @@
             </table>
         </div>
     </div>
-	    <div class="card mb-3 shadow-sm">
+
+    <div class="card shadow-sm">
         <div class="card-body p-2">
             <div class="input-group input-group-sm">
                 <span class="input-group-text bg-primary text-white fw-bold"><i class="fa-solid fa-plus me-1"></i> Thêm việc mới:</span>
@@ -106,7 +143,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 
 <script>
-    // --- 1. ĐÃ TÍCH HỢP CẤU HÌNH FIREBASE THẬT CỦA BẠN ---
+    // --- CẤU HÌNH FIREBASE THẬT CỦA BẠN ---
     const firebaseConfig = {
         apiKey: "AIzaSyBIS1gLoK2YPENOalSPt1e3UQXJmrAjG2s",
         authDomain: "congviecnha-a3b57.firebaseapp.com",
@@ -118,13 +155,13 @@
         measurementId: "G-VRZ5GX5MQR"
     };
     
-    // Khởi tạo Firebase trực tiếp
+    // Khởi tạo Firebase
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // --- 2. KHỞI TẠO BIẾN TOÀN CỤC ---
+    // KHỞI TẠO BIẾN TOÀN CỤC
     let currentWeekOffset = 0; 
-    let activeDayIndexes = []; // Lưu trữ mốc index xem ngày nào trùng ngày hôm nay
+    let activeDayIndexes = []; 
     
     // 17 việc mặc định (Luôn luôn hiển thị)
     const defaultTasks = [
@@ -150,11 +187,11 @@
     let customTasks = []; 
     let logsData = {};    
 
-    // --- 3. ĐIỀU HƯỚNG THỜI GIAN & LOGIC LỌC NGÀY ---
+    // ĐIỀU HƯỚNG THỜI GIAN & LOGIC LỌC NGÀY
     function getStartOfWeek(offset) {
         let now = new Date();
         let day = now.getDay();
-        let diff = now.getDate() - day + (day === 0 ? -6 : 1); // Đưa về Thứ 2
+        let diff = now.getDate() - day + (day === 0 ? -6 : 1); 
         let startOfWeek = new Date(now.getFullYear(), now.getMonth(), diff);
         startOfWeek.setDate(startOfWeek.getDate() + (offset * 7));
         return startOfWeek;
@@ -171,7 +208,7 @@
         
         let today = new Date();
         let todayStr = today.getDate() + '/' + (today.getMonth() + 1) + '/' + today.getFullYear();
-        activeDayIndexes = []; // Reset danh sách cột hôm nay
+        activeDayIndexes = []; 
 
         for (let i = 0; i < 7; i++) {
             let currentDay = new Date(start);
@@ -182,13 +219,11 @@
             
             document.getElementById(daysId[i]).innerText = curDayStr;
             
-            // Xóa màu cột cũ trước khi check lại
             document.getElementById(headersId[i]).classList.remove('current-day-column');
 
-            // Kiểm tra xem ngày của cột có phải là ngày hôm nay không
             if (curFullDayStr === todayStr) {
                 document.getElementById(headersId[i]).classList.add('current-day-column');
-                activeDayIndexes.push(i); // Lưu lại vị trí cột hôm nay
+                activeDayIndexes.push(i); 
             }
         }
         
@@ -203,7 +238,7 @@
         renderTable();
     }
 
-    // --- 4. KẾT NỐI SERVER ---
+    // KẾT NỐI SERVER
     function initDataListener() {
         db.ref('customTasks').on('value', snapshot => {
             customTasks = snapshot.val() || [];
@@ -215,11 +250,12 @@
         });
     }
 
+    // GHI DỮ LIỆU
     function saveData(path, data) {
         db.ref(path).set(data);
     }
 
-    // --- 5. RENDER BẢNG & LOGIC HIỂN THỊ BIẾN THIÊN ---
+    // RENDER BẢNG
     function renderTable() {
         const tbody = document.getElementById('task-table-body');
         tbody.innerHTML = '';
@@ -230,7 +266,6 @@
         let currentWeekKey = getWeekKey(startOfWeek);
         let allTasks = [...defaultTasks];
 
-        // Lọc việc tự thêm theo điều kiện ngày hiển thị
         customTasks.forEach(task => {
             let taskStartTime = new Date(task.startDate).getTime();
             let endOfWeekTime = startOfWeekTime + (7 * 24 * 60 * 60 * 1000);
@@ -249,35 +284,32 @@
             }
         });
 
-        // Vẽ từng hàng công việc
         allTasks.forEach(task => {
             let rowHtml = `<tr class="task-row">`;
             
-            // Cột Tên việc + Nút chức năng
-            rowHtml += `<td class="text-start fw-semibold p-2">
-                <div class="d-flex justify-content-between align-items-center">
-                    <span>${task.name}</span>
+            // Cột Tên công việc (Khóa dính cố định mép trái)
+            rowHtml += `<td class="text-start fw-semibold p-2 sticky-col">
+                <div class="d-flex flex-column justify-content-between h-100">
+                    <span class="task-text mb-1">${task.name}</span>
                     ${!task.isDefault ? `
-                        <div class="d-flex gap-1">
-                            <button class="btn btn-warning btn-xs" onclick="stopShowingNextWeek('${task.id}')" title="Không hiển thị từ tuần sau">
-                                <i class="fa-solid fa-eye-slash"></i> Ẩn từ tuần sau
+                        <div class="d-flex gap-1 mt-auto">
+                            <button class="btn btn-warning btn-xs px-1" onclick="stopShowingNextWeek('${task.id}')" title="Không hiển thị từ tuần sau">
+                                <i class="fa-solid fa-eye-slash"></i> Ẩn sau
                             </button>
-                            <button class="btn btn-link text-danger p-0 px-1" onclick="deleteTask('${task.id}')" title="Xóa vĩnh viễn"><i class="fa-solid fa-trash-can"></i></button>
+                            <button class="btn btn-link text-danger p-0 px-1 m-0" onclick="deleteTask('${task.id}')" title="Xóa vĩnh viễn"><i class="fa-solid fa-trash-can"></i></button>
                         </div>
                     ` : ''}
                 </div>
             </td>`;
 
-            // Vòng lặp vẽ 7 ô từ T2 -> CN
+            // Vẽ 7 ô ngày
             for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
                 let logKey = `${task.id}_${dayIndex}`;
                 let weekLogs = logsData[currentWeekKey] || {};
                 let cellData = weekLogs[logKey] || { Bi: false, Mi: false, Khac: false };
 
-                // Tính class màu nền dựa vào người được tích chọn hoặc ngày hiện tại
                 let cellClasses = [];
                 
-                // Nếu cột này trùng ngày hôm nay, thêm class tô màu cột hiện tại trước
                 if (activeDayIndexes.includes(dayIndex)) {
                     cellClasses.push('current-day-column');
                 }
@@ -311,7 +343,7 @@
         });
     }
 
-    // --- 6. XỬ LÝ SỰ KIỆN TƯƠNG TÁC GIAO DIỆN ---
+    // XỬ LÝ SỰ KIỆN TƯƠNG TÁC
     function onUserCheckChange(taskId, dayIndex, user, isChecked) {
         let startOfWeek = getStartOfWeek(currentWeekOffset);
         let currentWeekKey = getWeekKey(startOfWeek);
@@ -346,6 +378,7 @@
         nameInput.value = '';
     }
 
+    // Hàm ẩn việc từ tuần sau
     function stopShowingNextWeek(taskId) {
         let today = new Date();
         let todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
@@ -367,6 +400,7 @@
         }
     }
 
+    // Giữ lại hàm logic trong thẻ script nhưng nút kích hoạt ngoài giao diện đã bị ẩn đi
     function clearAllData() {
         if (confirm("Hành động này sẽ xóa SẠCH TOÀN BỘ dữ liệu công việc thêm mới và nhật ký trên Server. Bạn chắc chắn chứ?")) {
             db.ref('/').remove().then(() => location.reload());
