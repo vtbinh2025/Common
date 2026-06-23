@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trắc Nghiệm Hóa Học 8</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .quiz-container { max-width: 800px; margin: 30px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .question-block { margin-bottom: 25px; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #fff; }
+        .topic-badge { font-size: 0.8rem; font-weight: 600; padding: 5px 10px; border-radius: 20px; background-color: #e3f2fd; color: #0d6efd; margin-bottom: 10px; display: inline-block; }
+        .theory-link { font-size: 0.9rem; margin-left: 10px; color: #198754; text-decoration: none; }
+        .theory-link:hover { text-decoration: underline; }
+        .result-box { display: none; margin-top: 20px; padding: 20px; border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="quiz-container">
+        <h2 class="text-center text-primary mb-4">Bài Kiểm Tra Trắc Nghiệm Hóa Học</h2>
+        <p class="text-muted text-center">Hệ thống tự động chọn ngẫu nhiên 5 câu hỏi từ các chủ đề khác nhau.</p>
+        <hr>
+
+        <div id="auth-section" class="mb-4">
+            <label for="studentName" class="form-label font-weight-bold">Nhập tên của bạn để bắt đầu:</label>
+            <input type="text" id="studentName" class="form-control" placeholder="Ví dụ: Nguyễn Văn A">
+        </div>
+
+        <form id="quizForm">
+            <div id="questionsContainer"></div>
+            <button type="submit" class="btn btn-primary w-100 py-2 mt-3" id="submitBtn">Nộp Bài & Lưu Kết Quả</button>
+        </form>
+
+        <div id="resultBox" class="result-box bg-light border">
+            <h3 class="text-center text-success" id="scoreText"></h3>
+            <div id="analysisBox" class="mt-3">
+                <h5><strong class="text-danger">Phân tích phần kiến thức còn yếu:</strong></h5>
+                <ul id="weakTopicsList" class="list-group list-group-flush"></ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+<script>
+    // ==========================================
+    // 1. CẤU HÌNH FIREBASE (HÃY THAY BẰNG THÔNG TIN CỦA BẠN)
+    // ==========================================
+    const firebaseConfig = {
+    apiKey: "AIzaSyCFKtrcfmO47mzHy5wAOHv0lZOgjDFGogQ",
+    authDomain: "hoahoc-3a07a.firebaseapp.com",
+    projectId: "hoahoc-3a07a",
+    storageBucket: "hoahoc-3a07a.firebasestorage.app",
+    messagingSenderId: "19580302911",
+    appId: "1:19580302911:web:80cfe1f4d2e0cd3d3eaa8a",
+    measurementId: "G-T9JPCSG5LF"
+	};
+    
+    // Khởi tạo Firebase
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    // ==========================================
+    // 2. NGÂN HÀNG CÂU HỎI (MỖI BÀI 1 CÂU TIÊU BIỂU)
+    // ==========================================
+    const questionBank = [
+        { id: 1, topic: "Bài 2. Biến đổi vật lí và biến đổi hóa học", link: "https://vietjack.com/khoa-hoc-tu-nhien-8-kn/bai-2-bien-doi-vat-li-va-bien-doi-hoa-hoc.jsp", q: "Hiện tượng nào sau đây là biến đổi hóa học?", options: ["Nước đá tan thành nước lỏng", "Cơm bị ôi thiu", "Hòa tan đường vào nước", "Cắt nhỏ dây đồng"], correct: 1 },
+        { id: 2, topic: "Bài 3. Phản ứng hóa học và năng lượng trong các phản ứng hóa học", link: "https://vietjack.com/khoa-hoc-tu-nhien-8-kn/bai-3-phan-ung-hoa-hoc-va-nang-luong-trong-cac-phan-ung-hoa-hoc.jsp", q: "Phản ứng tỏa nhiệt là phản ứng:", options: ["Giải phóng năng lượng dạng nhiệt ra môi trường", "Hấp thụ năng lượng dạng nhiệt từ môi trường", "Không có sự thay đổi nhiệt độ", "Làm môi trường xung quanh lạnh đi"], correct: 0 },
+        { id: 3, topic: "Bài 4. Định luật bảo toàn khối lượng và phương trình hóa học", link: "https://vietjack.com/khoa-hoc-tu-nhien-8-kn/bai-4-dinh-luat-bao-toan-khoi-luong-va-phuong-trinh-hoa-hoc.jsp", q: "Trong một phản ứng hóa học, tổng khối lượng của các chất sản phẩm...", options: ["Lớn hơn tổng khối lượng chất tham gia", "Nhỏ hơn tổng khối lượng chất tham gia", "Bằng tổng khối lượng chất tham gia", "Thay đổi tùy điều kiện"], correct: 2 },
+        { id: 4, topic: "Bài 5. Mol và tỉ khối của chất khí", link: "https://vietjack.com/khoa-hoc-tu-nhien-8-kn/bai-5-mol-va-ti-khoi-cua-chat-khi.jsp", q: "Khí O2 nặng hay nhẹ hơn không khí bao nhiêu lần? (M_khongkhi ≈ 29)", options: ["Nhẹ hơn 1.1 lần", "Nặng hơn 1.1 lần", "Bằng không khí", "Nặng hơn 2 lần"], correct: 1 },
+        { id: 5, topic: "Bài 6. Tính theo phương trình hóa học", link: "https://vietjack.com/khoa-hoc-tu-nhien-8-kn/bai-6-tinh-theo-phuong-trinh-hoa-hoc.jsp", q: "Khi hiệu suất phản ứng nhỏ hơn 100%, lượng sản phẩm thực tế thu được sẽ:", options: ["Nhiều hơn lý thuyết", "Bằng lý thuyết", "Ít hơn lý thuyết", "Gấp đôi lý thuyết"], correct: 2 },
+        { id: 6, topic: "Bài 7. Nồng độ dung dịch", link: "https://vietjack.com/khoa-hoc-tu-nhien-8-kn/bai-7-nong-do-dung-dich.jsp", q: "Nồng độ mol (CM) cho biết điều gì?", options: ["Số gam chất tan trong 100g dung dịch", "Số mol chất tan trong 1 lít dung dịch", "Số gam chất tan trong 1 lít nước", "Khối lượng dung dịch"], correct: 1 },
+        { id: 7, topic: "Bài 8. Tốc độ phản ứng và chất xúc tác", link: "https://vietjack.com/khoa-hoc-tu-nhien-8-kn/bai-8-toc-do-phan-ung-va-chat-xuc-tac.jsp", q: "Chất xúc tác có đặc điểm nào sau đây?", options: ["Làm tăng tốc độ phản ứng và bị biến đổi sau phản ứng", "Làm giảm tốc độ phản ứng", "Làm tăng tốc độ phản ứng nhưng không bị biến đổi sau phản ứng", "Không ảnh hưởng đến phản ứng"], correct: 2 },
+        { id: 8, topic: "Bài 9. Một số hợp chất vô cơ: Acid", link: "https://vietjack.com/khoa-hoc-tu-nhien-8-kn/bai-9-mot-so-hop-chat-vo-co-acid.jsp", q: "Dung dịch Acid làm quỳ tím chuyển sang màu gì?", options: ["Xanh", "Đỏ", "Mất màu", "Vàng"], correct: 1 },
+        { id: 9, topic: "Bài 10. Một số hợp chất vô cơ: Base", link: "https://vietjack.com/khoa-hoc-tu-nhien-8-kn/bai-10-mot-so-hop-chat-vo-co-base.jsp", q: "Hợp chất nào sau đây là một Base tan (kiềm)?", options: ["Cu(OH)2", "NaOH", "Fe(OH)3", "Al(OH)3"], correct: 1 },
+        { id: 10, topic: "Bài 11. Thang pH", link: "https://vietjack.com/khoa-hoc-tu-nhien-8-kn/bai-11-thang-ph.jsp", q: "Một dung dịch có pH = 9, dung dịch này có môi trường gì?", options: ["Acid", "Trung tính", "Base (Kiềm)", "Không xác định được"], correct: 2 },
+        { id: 11, topic: "Bài 12. Một số hợp chất vô cơ: Oxide", link: "https://vietjack.com/khoa-hoc-tu-nhien-8-kn/bai-12-mot-so-hop-chat-vo-co-oxide.jsp", q: "Oxide nào sau đây là Oxide acid?", options: ["CaO", "CuO", "CO2", "Na2O"], correct: 2 },
+        { id: 12, topic: "Bài 13. Một số hợp chất vô cơ: Muối", link: "https://vietjack.com/khoa-hoc-tu-nhien-8-kn/bai-13-mot-so-hop-chat-vo-co-muoi.jsp", q: "Phản ứng giữa Acid và Base tạo thành muối và nước được gọi là phản ứng:", options: ["Trung hòa", "Phân hủy", "Thế", "Oxi hóa khử"], correct: 0 },
+        { id: 13, topic: "Bài 14. Một số hợp chất vô cơ: Phân bón hóa học", link: "https://vietjack.com/khoa-hoc-tu-nhien-8-kn/bai-14-mot-so-hop-chat-vo-co-phan-bon-hoa-hoc.jsp", q: "Phân đạm cung cấp nguyên tố dinh dưỡng nào cho cây trồng?", options: ["Phốt pho (P)", "Kali (K)", "Nitơ (N)", "Canxi (Ca)"], correct: 2 }
+    ];
+
+    // ==========================================
+    // 3. LOGIC CHỌN ĐỀ VÀ HIỂN THỊ (5 CÂU NGẪU NHIÊN)
+    // ==========================================
+    let currentQuiz = [];
+
+    function generateQuiz() {
+        // Trộn ngẫu nhiên câu hỏi từ ngân hàng câu hỏi
+        const shuffled = [...questionBank].sort(() => 0.5 - Math.random());
+        currentQuiz = shuffled.slice(0, 5); // Lấy đúng 5 câu
+        
+        const container = document.getElementById("questionsContainer");
+        container.innerHTML = "";
+
+        currentQuiz.forEach((item, index) => {
+            let optionsHtml = "";
+            item.options.forEach((opt, optIdx) => {
+                optionsHtml += `
+                    <div class="form-check my-2">
+                        <input class="form-check-input" type="radio" name="question-${index}" id="q-${index}-opt-${optIdx}" value="${optIdx}" required>
+                        <label class="form-check-input-label" for="q-${index}-opt-${optIdx}">${opt}</label>
+                    </div>
+                `;
+            });
+
+            container.innerHTML += `
+                <div class="question-block">
+                    <div>
+                        <span class="topic-badge">${item.topic}</span>
+                        <a href="${item.link}" target="_blank" class="theory-link">📖 Đọc lý thuyết</a>
+                    </div>
+                    <h5><strong>Câu ${index + 1}:</strong> ${item.q}</h5>
+                    <div class="options-group">${optionsHtml}</div>
+                </div>
+            `;
+        });
+    }
+
+    // Khởi chạy tạo đề
+    generateQuiz();
+
+    // ==========================================
+    // 4. XỬ LÝ NỘP BÀI, LƯU FIREBASE VÀ ĐÁNH GIÁ YẾU
+    // ==========================================
+    document.getElementById("quizForm").addEventListener("submit", function(e) {
+        e.preventDefault();
+
+        const studentName = document.getElementById("studentName").value.trim() || "Ẩn danh";
+        let score = 0;
+        let weakTopics = [];
+        let details = [];
+
+        currentQuiz.forEach((item, index) => {
+            const selectedOpt = document.querySelector(`input[name="question-${index}"]:checked`);
+            const answerIdx = selectedOpt ? parseInt(selectedOpt.value) : -1;
+            const isCorrect = (answerIdx === item.correct);
+
+            if (isCorrect) {
+                score++;
+            } else {
+                // Nếu sai, lưu tên bài vào danh sách còn yếu
+                weakTopics.push(item.topic);
+            }
+
+            details.push({
+                cau_hoi: item.q,
+                chu_de: item.topic,
+                lua_chon: answerIdx !== -1 ? item.options[answerIdx] : "Không trả lời",
+                ket_qua: isCorrect ? "Đúng" : "Sai"
+            });
+        });
+
+        // Định dạng thời gian làm bài theo múi giờ VN hiện tại
+        const timestamp = new Date().toLocaleString("vi-VN");
+
+        // Dữ liệu sẽ lưu lên Firebase
+        const testResult = {
+            ten_hoc_sinh: studentName,
+            thoi_gian: timestamp,
+            diem_so: `${score}/5`,
+            cac_muc_con_yeu: weakTopics.length > 0 ? weakTopics : ["Không có (Tuyệt vời!)"],
+            chi_tiet: details
+        };
+
+        // Đẩy lên Firebase Realtime Database tại nhánh 'lich_su_trac_nghiem'
+        database.ref('lich_su_trac_nghiem').push(testResult)
+        .then(() => {
+            alert("Kết quả làm bài đã được lưu vào Firebase thành công!");
+        })
+        .catch((error) => {
+            console.error("Lỗi lưu Firebase: ", error);
+        });
+
+        // Hiển thị kết quả lên giao diện
+        document.getElementById("scoreText").innerText = `Bạn đạt được: ${score}/5 điểm`;
+        const weakListUi = document.getElementById("weakTopicsList");
+        weakListUi.innerHTML = "";
+
+        if (weakTopics.length > 0) {
+            weakTopics.forEach(topic => {
+                weakListUi.innerHTML += `<li class="list-group-item list-group-item-danger">❌ ${topic}</li>`;
+            });
+        } else {
+            weakListUi.innerHTML += `<li class="list-group-item list-group-item-success">🎉 Xuất sắc! Bạn không yếu mục nào trong đề này.</li>`;
+        }
+
+        document.getElementById("resultBox").style.display = "block";
+        // Khóa nút nộp bài sau khi làm xong
+        document.getElementById("submitBtn").disabled = true;
+    });
+</script>
+
+</body>
+</html>
