@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bài Học Hóa Học: Khái Niệm Khái Quát Về Mol</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e67e22;
+            --bg-color: #f8f9fa;
+            --text-color: #333;
+            --card-bg: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary-color), #1a252f);
+            color: white;
+            text-align: center;
+            padding: 2.5rem 1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            letter-spacing: 1px;
+        }
+
+        header p {
+            margin: 0.5rem 0 0 0;
+            font-size: 1.1rem;
+            opacity: 0.8;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+
+        section {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border-left: 5px solid var(--secondary-color);
+        }
+
+        section h2 {
+            color: var(--primary-color);
+            margin-top: 0;
+            font-size: 1.6rem;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 0.5rem;
+        }
+
+        .highlight-box {
+            background-color: #eef7fc;
+            border-left: 4px solid var(--accent-color);
+            padding: 1rem 1.5rem;
+            margin: 1rem 0;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .highlight-box p {
+            margin: 0;
+            font-weight: 500;
+        }
+
+        ul, ol {
+            padding-left: 1.5rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .card {
+            background: #fdfdfd;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 1.2rem;
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+        }
+
+        .card h3 {
+            color: var(--secondary-color);
+            margin-top: 0;
+        }
+
+        .formula-box {
+            background-color: #2d3748;
+            color: #fff;
+            font-family: 'Courier New', Courier, monospace;
+            padding: 1.2rem;
+            border-radius: 6px;
+            margin: 1rem 0;
+            overflow-x: auto;
+        }
+
+        .formula-box span {
+            color: #f6e05e;
+            font-weight: bold;
+        }
+
+        .note {
+            font-size: 0.9rem;
+            color: #718096;
+            font-style: italic;
+        }
+
+        footer {
+            text-align: center;
+            padding: 1.5rem;
+            background-color: var(--primary-color);
+            color: white;
+            margin-top: 3rem;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 600px) {
+            header h1 { font-size: 1.8rem; }
+            section { padding: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Khái Niệm Khái Quát Về Mol</h1>
+        <p>Đơn vị đo lường nền tảng của thế giới hóa học</p>
+    </header>
+
+    <div class="container">
+
+        <!-- Phần 1: Khái niệm Mol -->
+        <section>
+            <h2>1. MOL là gì trong Hóa học?</h2>
+            <p>Trong đời sống, ta dùng "tá" để chỉ 12 chiếc bút, dùng "ram" để chỉ 500 tờ giấy. Còn trong hóa học, vì các nguyên tử và phân tử có kích thước siêu nhỏ, các nhà khoa học cần một đơn vị đo lường số lượng hạt siêu lớn. Đơn vị đó gọi là <strong>Mol</strong>.</p>
+            
+            <div class="highlight-box">
+                <p>Định nghĩa: Mol là lượng chất có chứa N<sub>A</sub> (6,022 × 10<sup>23</sup>) hạt vi mô (nguyên tử hoặc phân tử) của chất đó.</p>
+            </div>
+            
+            <p>Con số <strong>6,022 × 10<sup>23</sup></strong> được gọi là <strong>Số Avogadro</strong> (Kí hiệu là <strong>N<sub>A</sub></strong>). Để bạn dễ hình dung, nếu có 1 mol hạt cát, chúng có thể bao phủ toàn bộ bề mặt Trái Đất với độ dày lên tới vài mét!</p>
+            <ul>
+                <li><strong>1 mol nguyên tử Sắt (Fe)</strong> là một tập hợp gồm 6,022 × 10<sup>23</sup> nguyên tử Fe.</li>
+                <li><strong>1 mol phân tử Nước (H<sub>2</sub>O)</strong> là một tập hợp gồm 6,022 × 10<sup>23</sup> phân tử H<sub>2</sub>O.</li>
+            </ul>
+        </section>
+
+        <!-- Phần 2: Ý nghĩa thực tế -->
+        <section>
+            <h2>2. Ý nghĩa của Mol trong Thực tế Cuộc sống</h2>
+            <p>Dù nghe có vẻ lý thuyết, khái niệm Mol là chiếc cầu nối bắt buộc để ứng dụng hóa học vào đời sống thực tế:</p>
+            
+            <div class="grid-container">
+                <div class="card">
+                    <h3>Cân đong trong Công nghiệp</h3>
+                    <p>Chúng ta không thể đếm từng nguyên tử khi sản xuất. Khái niệm Mol giúp chuyển đổi số lượng nguyên tử sang khối lượng (gam, tấn) để công nhân nhà máy dễ dàng cân đo đong đếm nguyên liệu đầu vào.</p>
+                </div>
+                <div class="card">
+                    <h3>Y học và Dược phẩm</h3>
+                    <p>Khi chế tạo thuốc, các dược sĩ phải tính toán chính xác số mol hoạt chất. Việc này đảm bảo các phản ứng sinh hóa trong cơ thể người bệnh diễn ra vừa đủ, không bị thiếu thuốc hoặc gây ngộ độc do quá liều.</p>
+                </div>
+                <div class="card">
+                    <h3>Bảo vệ Môi trường</h3>
+                    <p>Các kỹ sư dựa vào số mol khí thải (như CO<sub>2</sub>, SO<sub>2</sub>) để thiết kế các hệ thống lọc khí hấp thụ vừa vặn lượng độc tố, ngăn chặn ô nhiễm môi trường hiệu quả.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Phần 3: Cách tính Mol -->
+        <section>
+            <h2>3. Các cách tính số MOL của một chất</h2>
+            <p>Tùy thuộc vào dữ kiện đề bài cho ở dạng khối lượng, thể tích khí, hay số lượng hạt, chúng ta có các công thức tính số mol (kí hiệu là <strong>n</strong>) tương ứng:</p>
+
+            <h3>Dạng 1: Tính theo Khối lượng (m)</h3>
+            <p>Áp dụng khi biết khối lượng của chất bằng gam.</p>
+            <div class="formula-box">
+                Công thức: <span>n = m / M</span>
+            </div>
+            <ul>
+                <li><strong>n:</strong> Số mol chất (mol)</li>
+                <li><strong>m:</strong> Khối lượng chất (gam)</li>
+                <li><strong>M:</strong> Khối lượng mol của chất (g/mol) — <i>(tra bảng tuần hoàn)</i></li>
+            </ul>
+            <p class="note">Ví dụ: Tính số mol của 24g Carbon (C). Biết M<sub>C</sub> = 12 g/mol. <br> Giải: n = 24 / 12 = 2 mol.</p>
+
+            <h3>Dạng 2: Tính theo Thể tích Khí (V) ở Điều kiện chuẩn (đkc)</h3>
+            <p>Áp dụng đối với các chất ở thể khí (ở nhiệt độ 25 °C, áp suất 1 bar).</p>
+            <div class="formula-box">
+                Công thức: <span>n = V / 24,79</span>
+            </div>
+            <ul>
+                <li><strong>V:</strong> Thể tích khí tính bằng lít (lít hoặc dm<sup>3</sup>)</li>
+                <li><strong>24,79:</strong> Thể tích của 1 mol chất khí bất kỳ ở điều kiện chuẩn hiện nay.</li>
+            </ul>
+            <p class="note">Ví dụ: Tính số mol của 4,958 lít khí Oxy (O<sub>2</sub>) ở đkc. <br> Giải: n = 4,958 / 24,79 = 0,2 mol.</p>
+
+            <h3>Dạng 3: Tính theo Số hạt vi mô (A)</h3>
+            <p>Áp dụng khi biết tổng số nguyên tử hoặc phân tử có trong mẫu chất.</p>
+            <div class="formula-box">
+                Công thức: <span>n = A / N<sub>A</sub></span>
+            </div>
+            <ul>
+                <li><strong>A:</strong> Số nguyên tử hoặc phân tử đề bài cho.</li>
+                <li><strong>N<sub>A</sub>:</strong> Số Avogadro (6,022 × 10<sup>23</sup>)</li>
+            </ul>
+        </section>
+
+    </div>
+
+    <footer>
+        <p>© 2026 Trang Web Học Tập Hóa Học Nâng Cao. Mọi quyền được bảo lưu.</p>
+    </footer>
+
+</body>
+</html>
