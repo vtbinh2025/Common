@@ -133,7 +133,7 @@
             <div class="input-group input-group-sm">
                 <span class="input-group-text bg-primary text-white fw-bold"><i class="fa-solid fa-plus me-1"></i> Thêm việc mới:</span>
                 <input type="text" id="new-task-name" class="form-control" placeholder="Nhập tên việc nhà cần làm vào đây...">
-                <button class="btn btn-primary fw-bold" type="button" onclick="addNewTask()">Lưu Lại</button>
+                <button id="save-task-button" class="btn btn-primary fw-bold" type="button" onclick="addNewTask()">Lưu Lại</button>
             </div>
         </div>
     </div>
@@ -153,13 +153,33 @@
 	  messagingSenderId: "693667840973",
 	  appId: "1:693667840973:web:8346af8bdd35407f523a84"
 	};    
-    // Khởi tạo Firebase
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
     // KHỞI TẠO BIẾN TOÀN CỤC
-    let currentWeekOffset = 0; 
-    let activeDayIndexes = []; 
+    let db = null;
+    let firebaseReady = false;
+    let currentWeekOffset = 0;
+    let activeDayIndexes = [];
+
+    function initializeFirebaseSafely() {
+        try {
+            if (typeof firebase === 'undefined') {
+                throw new Error('Không tải được thư viện Firebase từ CDN.');
+            }
+
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+
+            db = firebase.database();
+            firebaseReady = true;
+            console.log('Firebase đã kết nối.');
+            return true;
+        } catch (error) {
+            firebaseReady = false;
+            db = null;
+            console.error('Lỗi khởi tạo Firebase:', error);
+            return false;
+        }
+    }
     
     // 17 việc mặc định (Luôn luôn hiển thị)
     const defaultTasks = [
@@ -255,19 +275,53 @@
 
     // KẾT NỐI SERVER
     function initDataListener() {
-        db.ref('customTasks').on('value', snapshot => {
-            customTasks = snapshot.val() || [];
-            renderTable();
-        });
-        db.ref('logsData').on('value', snapshot => {
-            logsData = snapshot.val() || {};
-            renderTable();
-        });
+        if (!db) {
+            console.warn('Firebase chưa sẵn sàng. Chỉ hiển thị dữ liệu mặc định.');
+            return;
+        }
+
+        db.ref('customTasks').on(
+            'value',
+            snapshot => {
+                const data = snapshot.val();
+
+                if (Array.isArray(data)) {
+                    customTasks = data.filter(Boolean);
+                } else if (data && typeof data === 'object') {
+                    customTasks = Object.values(data).filter(Boolean);
+                } else {
+                    customTasks = [];
+                }
+
+                renderTable();
+            },
+            error => {
+                console.error('Không đọc được customTasks:', error);
+                customTasks = [];
+                renderTable();
+            }
+        );
+
+        db.ref('logsData').on(
+            'value',
+            snapshot => {
+                logsData = snapshot.val() || {};
+                renderTable();
+            },
+            error => {
+                console.error('Không đọc được logsData:', error);
+                logsData = {};
+                renderTable();
+            }
+        );
     }
 
     // GHI DỮ LIỆU
     function saveData(path, data) {
-        db.ref(path).set(data);
+        if (!db) {
+            return Promise.reject(new Error('Firebase chưa được kết nối.'));
+        }
+        return db.ref(path).set(data);
     }
 
     // RENDER BẢNG
@@ -281,7 +335,11 @@
         let currentWeekKey = getWeekKey(startOfWeek);
         let allTasks = [...defaultTasks];
 
-        customTasks.forEach(task => {
+        const safeCustomTasks = Array.isArray(customTasks)
+            ? customTasks
+            : Object.values(customTasks || {}).filter(Boolean);
+
+        safeCustomTasks.forEach(task => {
             let taskStartTime = new Date(task.startDate).getTime();
             let endOfWeekTime = startOfWeekTime + (7 * 24 * 60 * 60 * 1000);
             let isStarted = taskStartTime < endOfWeekTime;
@@ -359,59 +417,119 @@
     }
 
     // XỬ LÝ SỰ KIỆN TƯƠNG TÁC
-    function onUserCheckChange(taskId, dayIndex, user, isChecked) {
-        let startOfWeek = getStartOfWeek(currentWeekOffset);
-        let currentWeekKey = getWeekKey(startOfWeek);
+    async function onUserCheckChange(taskId, dayIndex, user, isChecked) {
+        const startOfWeek = getStartOfWeek(currentWeekOffset);
+        const currentWeekKey = getWeekKey(startOfWeek);
+        const logKey = `${taskId}_${dayIndex}`;
 
         if (!logsData[currentWeekKey]) logsData[currentWeekKey] = {};
-        if (!logsData[currentWeekKey][`${taskId}_${dayIndex}`]) {
-            logsData[currentWeekKey][`${taskId}_${dayIndex}`] = { Bi: false, Mi: false, Khac: false };
+        if (!logsData[currentWeekKey][logKey]) {
+            logsData[currentWeekKey][logKey] = {
+                Bi: false,
+                Mi: false,
+                Khac: false
+            };
         }
 
-        logsData[currentWeekKey][`${taskId}_${dayIndex}`][user] = isChecked;
-        saveData('logsData', logsData);
+        logsData[currentWeekKey][logKey][user] = isChecked;
+        renderTable();
+
+        try {
+            await saveData(`logsData/${currentWeekKey}/${logKey}/${user}`, isChecked);
+        } catch (error) {
+            console.error('Không lưu được trạng thái checkbox:', error);
+            alert('Không lưu được trạng thái lên Firebase: ' + (error.message || error));
+        }
     }
 
-    function addNewTask() {
+    async function addNewTask() {
         const nameInput = document.getElementById('new-task-name');
-        let name = nameInput.value.trim();
-        if (!name) return alert('Bạn chưa nhập tên công việc!');
+        const saveButton = document.getElementById('save-task-button');
+        const name = nameInput.value.trim();
 
-        let today = new Date();
-        let todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+        if (!name) {
+            alert('Bạn chưa nhập tên công việc!');
+            nameInput.focus();
+            return;
+        }
 
-        let newTask = {
-            id: "custom_" + Date.now(),
+        if (!db) {
+            alert('Firebase chưa kết nối. Hãy kiểm tra Internet, Firebase Rules hoặc mở F12 → Console để xem lỗi.');
+            return;
+        }
+
+        const today = new Date();
+        const todayStr =
+            today.getFullYear() + '-' +
+            String(today.getMonth() + 1).padStart(2, '0') + '-' +
+            String(today.getDate()).padStart(2, '0');
+
+        const taskId = 'custom_' + Date.now();
+        const newTask = {
+            id: taskId,
             name: name,
             isDefault: false,
-            startDate: todayStr, 
-            endDate: null        
+            startDate: todayStr,
+            endDate: null
         };
 
-        customTasks.push(newTask);
-        saveData('customTasks', customTasks);
-        nameInput.value = '';
+        try {
+            saveButton.disabled = true;
+            saveButton.innerText = 'Đang lưu...';
+
+            await db.ref('customTasks/' + taskId).set(newTask);
+
+            nameInput.value = '';
+            nameInput.focus();
+        } catch (error) {
+            console.error('Lỗi lưu Firebase:', error);
+            alert(
+                `Không lưu được lên Firebase.
+
+Mã lỗi: ${error.code || 'không xác định'}
+Chi tiết: ${error.message || error}`
+            );
+        } finally {
+            saveButton.disabled = false;
+            saveButton.innerText = 'Lưu Lại';
+        }
     }
 
     // Hàm ẩn việc từ tuần sau
-    function stopShowingNextWeek(taskId) {
-        let today = new Date();
-        let todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+    async function stopShowingNextWeek(taskId) {
+        if (!db) {
+            alert('Firebase chưa kết nối.');
+            return;
+        }
 
-        customTasks = customTasks.map(t => {
-            if (t.id === taskId) {
-                t.endDate = todayStr; 
-            }
-            return t;
-        });
-        saveData('customTasks', customTasks);
-        alert("Đã thiết lập! Việc này sẽ vẫn hiện ở tuần này và ẩn đi từ các tuần sau.");
+        const today = new Date();
+        const todayStr =
+            today.getFullYear() + '-' +
+            String(today.getMonth() + 1).padStart(2, '0') + '-' +
+            String(today.getDate()).padStart(2, '0');
+
+        try {
+            await db.ref(`customTasks/${taskId}/endDate`).set(todayStr);
+            alert('Đã thiết lập! Việc này vẫn hiện trong tuần này và sẽ ẩn ở các tuần sau.');
+        } catch (error) {
+            console.error('Không cập nhật được công việc:', error);
+            alert('Không cập nhật được Firebase: ' + (error.message || error));
+        }
     }
 
-    function deleteTask(taskId) {
-        if(confirm("Xóa vĩnh viễn việc tự thêm này (bao gồm cả lịch sử đã làm)?")) {
-            customTasks = customTasks.filter(t => t.id !== taskId);
-            saveData('customTasks', customTasks);
+    async function deleteTask(taskId) {
+        if (!confirm('Xóa vĩnh viễn việc tự thêm này?')) return;
+
+        if (!db) {
+            alert('Firebase chưa kết nối.');
+            return;
+        }
+
+        try {
+            await db.ref(`customTasks/${taskId}`).remove();
+        } catch (error) {
+            console.error('Không xóa được công việc:', error);
+            alert('Không xóa được trên Firebase: ' + (error.message || error));
         }
     }
 
@@ -422,10 +540,24 @@
         }
     }
 
-    window.onload = function() {
+    document.addEventListener('DOMContentLoaded', function() {
+        // Hiển thị tuần và danh sách mặc định ngay lập tức,
+        // không chờ Firebase nên không bị kẹt ở “Đang tải...”.
         updateCalendarDates();
-        initDataListener();
-    };
+        renderTable();
+
+        const nameInput = document.getElementById('new-task-name');
+        nameInput.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                addNewTask();
+            }
+        });
+
+        if (initializeFirebaseSafely()) {
+            initDataListener();
+        }
+    });
 </script>
 </body>
 </html>
