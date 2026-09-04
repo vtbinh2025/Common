@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Theo dõi 6/35 - Firebase - 2 lần/ngày</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#fff; --text:#172033; --muted:#697386;
+    --line:#dfe5ef; --accent:#3b82f6; --danger:#ef4444; --ok:#16a34a;
+    --warn:#f59e0b; --chip:#eef3fb; --chip2:#e8f0ff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
+  .wrap{max-width:1200px;margin:0 auto;padding:18px}
+  h1{font-size:25px;margin:0 0 8px}
+  h2{font-size:19px;margin:0 0 12px}
+  h3{font-size:16px;margin:12px 0 8px}
+  .note{font-size:13px;color:var(--muted);line-height:1.45}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 3px 12px rgba(20,30,50,.04)}
+  .full{grid-column:1/-1}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  label{font-size:13px;font-weight:700}
+  input[type=date], input[type=number], select{
+    border:1px solid var(--line);border-radius:9px;padding:9px 10px;background:#fff;color:var(--text)
+  }
+  .chips{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+  .chips.special{grid-template-columns:repeat(6,1fr)}
+  .chip{
+    border:1px solid var(--line);background:var(--chip);border-radius:10px;padding:9px 0;
+    text-align:center;cursor:pointer;user-select:none;font-weight:700;transition:.15s;
+  }
+  .chip:hover{transform:translateY(-1px)}
+  .chip.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .chip.actual{background:#111827;color:#fff;border-color:#111827}
+  .count{font-weight:700;color:var(--accent)}
+  button{border:none;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer}
+  .primary{background:var(--accent);color:#fff}
+  .secondary{background:#eef2f7;color:var(--text)}
+  .danger{background:var(--danger);color:#fff}
+  .success{background:var(--ok);color:#fff}
+  .warn{background:var(--warn);color:#fff}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .stat{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fafcff}
+  .stat .v{font-size:22px;font-weight:800;margin-top:4px}
+  .stat .k{font-size:12px;color:var(--muted)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+  th{background:#f8fafc;position:sticky;top:0}
+  .table-wrap{max-height:430px;overflow:auto;border:1px solid var(--line);border-radius:12px}
+  .badge{display:inline-block;padding:3px 7px;border-radius:999px;background:#eef2f7;margin:2px;font-size:12px}
+  .badge.ok{background:#dcfce7;color:#166534}
+  .badge.bad{background:#fee2e2;color:#991b1b}
+  .rec-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .rec-box{border:1px solid var(--line);border-radius:12px;padding:12px}
+  .score-list{display:flex;flex-wrap:wrap;gap:7px}
+  .score-chip{padding:7px 9px;border-radius:9px;background:var(--chip2);font-size:13px}
+  .small{font-size:12px;color:var(--muted)}
+  .cloud-status{display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:700;background:#eef2f7;color:#475569}
+  .cloud-status.ok{background:#dcfce7;color:#166534}
+  .cloud-status.bad{background:#fee2e2;color:#991b1b}
+  .cloud-status.wait{background:#fef3c7;color:#92400e}
+  .footer-space{height:30px}
+  @media(max-width:800px){
+    .grid{grid-template-columns:1fr}.full{grid-column:auto}
+    .chips{grid-template-columns:repeat(5,1fr)}
+    .chips.special{grid-template-columns:repeat(4,1fr)}
+    .stats{grid-template-columns:repeat(2,1fr)}
+    .rec-grid{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Theo dõi 6/35 — 2 lần/ngày • Firebase Realtime Database</h1>
+  <div class="note">
+    Mô hình: 5 số thường từ 1–35 + 1 số đặc biệt từ 1–12.
+    Mỗi ngày có <b>2 lần</b> (Lần 1 / Lần 2). Mỗi lần được lưu thành một bản ghi riêng trên <b>Firebase Realtime Database</b>; localStorage vẫn được dùng làm cache dự phòng.
+  </div>
+  <div id="cloudStatus" class="cloud-status wait">● Đang kết nối Firebase...</div>
+
+  <div class="grid" style="margin-top:16px">
+    <section class="card">
+      <h2>1) Dự đoán trước kỳ quay</h2>
+      <div class="row">
+        <label>Ngày:</label>
+        <input id="drawDate" type="date">
+        <label>Lần:</label>
+        <select id="drawSession" title="Mỗi ngày có 2 lần lưu riêng">
+          <option value="1">Lần 1</option>
+          <option value="2">Lần 2</option>
+        </select>
+        <button class="secondary" id="todayBtn">Hôm nay</button>
+      </div>
+
+      <h3>Bộ loại bỏ thường (1–35)</h3>
+      <div class="note">Đã chọn: <span class="count" id="normalExcludeCount">0</span> số</div>
+      <div id="normalExcludeChips" class="chips" style="margin-top:8px"></div>
+
+      <h3>Bộ loại bỏ đặc biệt (1–12)</h3>
+      <div class="note">Đã chọn: <span class="count" id="specialExcludeCount">0</span> số</div>
+      <div id="specialExcludeChips" class="chips special" style="margin-top:8px"></div>
+
+      <div class="row" style="margin-top:14px">
+        <button class="primary" id="savePredictionBtn">Lưu dự đoán</button>
+        <button class="secondary" id="clearPredictionBtn">Bỏ chọn</button>
+        <button class="warn" id="applyRecommendBtn">Áp dụng gợi ý</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>2) Nhập kết quả sau kỳ quay</h2>
+      <div class="note">Chọn đúng <b>5 số thường</b> và <b>1 số đặc biệt</b>.</div>
+
+      <h3>Kết quả thường (5 số)</h3>
+      <div class="note">Đã chọn: <span class="count" id="normalActualCount">0</span>/5</div>
+      <div id="normalActualChips" class="chips" style="margin-top:8px"></div>
+
+      <h3>Kết quả đặc biệt (1 số)</h3>
+      <div class="note">Đã chọn: <span class="count" id="specialActualCount">0</span>/1</div>
+      <div id="specialActualChips" class="chips special" style="margin-top:8px"></div>
+
+      <div class="row" style="margin-top:14px">
+        <button class="success" id="saveResultBtn">Lưu kết quả & tính tỷ lệ</button>
+        <button class="secondary" id="clearResultBtn">Bỏ chọn kết quả</button>
+      </div>
+      <div id="currentScore" style="margin-top:14px"></div>
+    </section>
+
+    <section class="card full">
+      <h2>3) Thống kê chu kỳ hiện tại</h2>
+      <div class="stats">
+        <div class="stat"><div class="k">Số kỳ đã có kết quả</div><div class="v" id="sDraws">0</div></div>
+        <div class="stat"><div class="k">Khớp bộ loại bỏ thường</div><div class="v" id="sNormalAcc">—</div></div>
+        <div class="stat"><div class="k">Khớp bộ loại bỏ đặc biệt</div><div class="v" id="sSpecialAcc">—</div></div>
+        <div class="stat"><div class="k">Khớp tổng hợp</div><div class="v" id="sOverallAcc">—</div></div>
+      </div>
+      <div class="note" style="margin-top:10px">
+        Ví dụ: bạn loại 10 số thường, kết quả thực tế có 1 số nằm trong bộ loại → 9/10 dự đoán loại đúng = 90%.
+      </div>
+    </section>
+
+    <section class="card full">
+      <h2>4) Gợi ý bộ loại bỏ từ lịch sử</h2>
+      <div class="note">
+        Thuật toán xếp hạng theo dữ liệu của chính chu kỳ: tỷ lệ vắng mặt toàn lịch sử + tỷ lệ vắng mặt 10 kỳ gần nhất +
+        hiệu quả thực tế khi số đó từng được đưa vào bộ loại bỏ. Đây là thống kê thực nghiệm, không đảm bảo dự đoán xổ số chính xác hơn.
+      </div>
+
+      <div class="row" style="margin:12px 0">
+        <label>Số lượng gợi ý thường:</label>
+        <input id="recommendNormalN" type="number" min="0" max="30" value="10" style="width:80px">
+        <label>Số lượng gợi ý đặc biệt:</label>
+        <input id="recommendSpecialN" type="number" min="0" max="11" value="4" style="width:80px">
+        <button class="primary" id="refreshRecommendBtn">Tính gợi ý</button>
+      </div>
+
+      <div class="rec-grid">
+        <div class="rec-box">
+          <b>Gợi ý loại bỏ thường</b>
+          <div id="normalRecommend" class="score-list" style="margin-top:8px"></div>
+        </div>
+        <div class="rec-box">
+          <b>Gợi ý loại bỏ đặc biệt</b>
+          <div id="specialRecommend" class="score-list" style="margin-top:8px"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card full">
+      <h2>5) Lịch sử</h2>
+      <div class="row" style="margin-bottom:10px">
+        <button class="secondary" id="exportBtn">Xuất JSON</button>
+        <button class="secondary" id="importBtn">Nhập JSON</button>
+        <input type="file" id="importFile" accept=".json" style="display:none">
+        <button class="danger" id="resetBtn">Reset chu kỳ</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Ngày</th><th>Lần</th><th>Loại thường</th><th>Loại đặc biệt</th><th>Kết quả thường</th>
+              <th>Đặc biệt</th><th>Khớp thường</th><th>Khớp ĐB</th><th>Va chạm</th>
+            </tr>
+          </thead>
+          <tbody id="historyBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+  <div class="footer-space"></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+<script>
+(() => {
+  const STORAGE_KEY = 'tracker_6_35_v2_2lan';
+  const LEGACY_STORAGE_KEY = 'tracker_6_35_v1';
+  const FIREBASE_ROOT = 'lotnoTracker';
+
+  // Firebase config do bạn cung cấp.
+  // Nếu Realtime Database của bạn dùng URL theo khu vực (ví dụ asia-southeast1),
+  // hãy copy chính xác databaseURL từ Firebase Console > Realtime Database.
+  const firebaseConfig = {
+    apiKey: "AIzaSyCT_F58W8o29U8ky9HsZDRF8Sznr_NR384",
+    authDomain: "lotnotracker.firebaseapp.com",
+    databaseURL: "https://lotnotracker-default-rtdb.firebaseio.com", // đổi nếu Console của bạn hiển thị URL khác
+    projectId: "lotnotracker",
+    storageBucket: "lotnotracker.firebasestorage.app",
+    messagingSenderId: "818637463490",
+    appId: "1:818637463490:web:2c0edf80331341a065005b"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+  const rootRef = db.ref(FIREBASE_ROOT);
+  const recordsRef = rootRef.child('records');
+
+  let state = { records: [] };
+  let firebaseReady = false;
+  let ui = {
+    normalExclude: new Set(),
+    specialExclude: new Set(),
+    normalActual: new Set(),
+    specialActual: new Set(),
+    recommendation: { normal: [], special: [] }
+  };
+
+  const $ = id => document.getElementById(id);
+
+  function setCloudStatus(text, type='wait'){
+    const el = $('cloudStatus');
+    el.className = 'cloud-status ' + type;
+    el.textContent = text;
+  }
+
+  function todayISO(){
+    const d = new Date();
+    const off = d.getTimezoneOffset();
+    return new Date(d.getTime() - off*60000).toISOString().slice(0,10);
+  }
+
+  function compareRecords(a,b){
+    const byDate = String(a.date).localeCompare(String(b.date));
+    if(byDate !== 0) return byDate;
+    return Number(a.session || 1) - Number(b.session || 1);
+  }
+
+  function normalizeRecord(r, fallbackDate=null, fallbackSession=1){
+    if(!r || typeof r !== 'object') return null;
+    const date = String(r.date || fallbackDate || '');
+    if(!date) return null;
+    let session = Number(r.session || fallbackSession || 1);
+    if(session !== 2) session = 1;
+    return {
+      ...r,
+      date,
+      session,
+      normalExclude: Array.isArray(r.normalExclude) ? r.normalExclude : [],
+      specialExclude: Array.isArray(r.specialExclude) ? r.specialExclude : [],
+      normalActual: Array.isArray(r.normalActual) ? r.normalActual : [],
+      specialActual: Array.isArray(r.specialActual) ? r.specialActual : [],
+      updatedAt: r.updatedAt || null
+    };
+  }
+
+  function normalizeState(obj){
+    if(!obj || !Array.isArray(obj.records)) return {records:[]};
+    const records = obj.records
+      .map(r => normalizeRecord(r))
+      .filter(Boolean)
+      .sort(compareRecords);
+    return {records};
+  }
+
+  function loadLocal(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        state = normalizeState(JSON.parse(raw));
+        return;
+      }
+
+      // Tự đọc dữ liệu local của V1 nếu người dùng nâng cấp từ bản 1 lần/ngày.
+      const legacyRaw = localStorage.getItem(LEGACY_STORAGE_KEY);
+      if(legacyRaw){
+        state = normalizeState(JSON.parse(legacyRaw));
+        saveLocal();
+      }
+    }catch(e){
+      console.warn('Không đọc được localStorage:', e);
+    }
+  }
+
+  function saveLocal(){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  function recordsArrayToObject(records){
+    const out = {};
+    records.forEach(r => {
+      const rec = normalizeRecord(r);
+      if(!rec) return;
+      const sessionKey = 'L' + rec.session;
+      if(!out[rec.date]) out[rec.date] = {};
+      out[rec.date][sessionKey] = {
+        date: rec.date,
+        session: rec.session,
+        normalExclude: rec.normalExclude,
+        specialExclude: rec.specialExclude,
+        normalActual: rec.normalActual,
+        specialActual: rec.specialActual,
+        updatedAt: rec.updatedAt || new Date().toISOString()
+      };
+    });
+    return out;
+  }
+
+  function firebaseObjectToRecords(obj){
+    if(!obj || typeof obj !== 'object') return [];
+    const records = [];
+
+    Object.entries(obj).forEach(([dateKey, value]) => {
+      if(!value || typeof value !== 'object') return;
+
+      // Schema V1 cũ: records/YYYY-MM-DD là trực tiếp một record.
+      // Tự coi dữ liệu cũ là Lần 1 để không mất lịch sử.
+      if(value.date || Array.isArray(value.normalExclude) || Array.isArray(value.normalActual)){
+        const legacy = normalizeRecord(value, dateKey, 1);
+        if(legacy) records.push(legacy);
+        return;
+      }
+
+      // Schema V2: records/YYYY-MM-DD/L1 và /L2.
+      ['L1','L2'].forEach((sessionKey, idx) => {
+        if(!value[sessionKey]) return;
+        const rec = normalizeRecord(value[sessionKey], dateKey, idx + 1);
+        if(rec) records.push(rec);
+      });
+    });
+
+    return records.sort(compareRecords);
+  }
+
+  async function save(){
+    saveLocal();
+    setCloudStatus('● Đang đồng bộ lên Firebase...', 'wait');
+
+    const payload = {
+      records: recordsArrayToObject(state.records),
+      meta: {
+        schemaVersion: 2,
+        updatedAt: new Date().toISOString(),
+        source: 'lotno_tracker6_firebase_2lan.html'
+      }
+    };
+
+    try{
+      await rootRef.set(payload);
+      setCloudStatus('● Firebase đã đồng bộ', 'ok');
+    }catch(err){
+      console.error('Firebase write error:', err);
+      setCloudStatus('● Firebase lỗi ghi - dữ liệu vẫn còn trong máy', 'bad');
+      throw err;
+    }
+  }
+
+  function currentSession(){
+    return Number($('drawSession').value) === 2 ? 2 : 1;
+  }
+
+  function getRecord(date, session=currentSession()){
+    return state.records.find(r => r.date === date && Number(r.session || 1) === Number(session));
+  }
+
+  async function upsertRecord(rec){
+    const clean = normalizeRecord({...rec, updatedAt:new Date().toISOString()});
+    const i = state.records.findIndex(r => r.date === clean.date && Number(r.session || 1) === clean.session);
+    if(i >= 0) state.records[i] = {...state.records[i], ...clean};
+    else state.records.push(clean);
+    state.records.sort(compareRecords);
+    await save();
+  }
+
+  function makeChips(containerId, max, setObj, mode, maxSelect=null){
+    const el = $(containerId);
+    el.innerHTML = '';
+    for(let n=1;n<=max;n++){
+      const b = document.createElement('div');
+      b.className = 'chip';
+      b.textContent = n;
+      if(setObj.has(n)) b.classList.add(mode === 'actual' ? 'actual' : 'active');
+      b.onclick = () => {
+        if(setObj.has(n)) setObj.delete(n);
+        else{
+          if(maxSelect && setObj.size >= maxSelect) return;
+          setObj.add(n);
+        }
+        renderAllChips();
+      };
+      el.appendChild(b);
+    }
+  }
+
+  function renderAllChips(){
+    makeChips('normalExcludeChips',35,ui.normalExclude,'exclude');
+    makeChips('specialExcludeChips',12,ui.specialExclude,'exclude');
+    makeChips('normalActualChips',35,ui.normalActual,'actual',5);
+    makeChips('specialActualChips',12,ui.specialActual,'actual',1);
+    $('normalExcludeCount').textContent = ui.normalExclude.size;
+    $('specialExcludeCount').textContent = ui.specialExclude.size;
+    $('normalActualCount').textContent = ui.normalActual.size;
+    $('specialActualCount').textContent = ui.specialActual.size;
+  }
+
+  function scoreRecord(r){
+    if(!r || !Array.isArray(r.normalActual) || r.normalActual.length!==5 || !Array.isArray(r.specialActual) || r.specialActual.length!==1){
+      return null;
+    }
+    const nEx = r.normalExclude || [];
+    const sEx = r.specialExclude || [];
+    const nActual = new Set(r.normalActual);
+    const sActual = new Set(r.specialActual);
+    const nHits = nEx.filter(x => !nActual.has(x)).length;
+    const sHits = sEx.filter(x => !sActual.has(x)).length;
+    const nCollision = nEx.filter(x => nActual.has(x));
+    const sCollision = sEx.filter(x => sActual.has(x));
+    return {
+      normalCorrect:nHits, normalTotal:nEx.length, normalPct:nEx.length ? nHits/nEx.length*100 : null,
+      specialCorrect:sHits, specialTotal:sEx.length, specialPct:sEx.length ? sHits/sEx.length*100 : null,
+      totalCorrect:nHits+sHits, totalPred:nEx.length+sEx.length,
+      overallPct:(nEx.length+sEx.length) ? (nHits+sHits)/(nEx.length+sEx.length)*100 : null,
+      nCollision,sCollision
+    };
+  }
+
+  function pct(v){ return v==null ? '—' : v.toFixed(1)+'%'; }
+
+  function renderCurrentScore(){
+    const r = getRecord($('drawDate').value, currentSession());
+    const s = scoreRecord(r);
+    if(!s){ $('currentScore').innerHTML=''; return; }
+    $('currentScore').innerHTML = `
+      <div class="rec-box">
+        <b>Kết quả đánh giá ngày ${r.date} — Lần ${r.session || 1}</b><br>
+        Thường: <b>${s.normalCorrect}/${s.normalTotal} = ${pct(s.normalPct)}</b> ·
+        Đặc biệt: <b>${s.specialCorrect}/${s.specialTotal} = ${pct(s.specialPct)}</b> ·
+        Tổng: <b>${s.totalCorrect}/${s.totalPred} = ${pct(s.overallPct)}</b><br>
+        <span class="small">Số bị loại nhưng lại xuất hiện: thường [${s.nCollision.join(', ')||'không có'}], đặc biệt [${s.sCollision.join(', ')||'không có'}]</span>
+      </div>`;
+  }
+
+  function renderStats(){
+    const scored = state.records.map(r => ({r,s:scoreRecord(r)})).filter(x=>x.s);
+    $('sDraws').textContent = scored.length;
+    let nC=0,nT=0,sC=0,sT=0;
+    scored.forEach(({s})=>{ nC += s.normalCorrect; nT += s.normalTotal; sC += s.specialCorrect; sT += s.specialTotal; });
+    $('sNormalAcc').textContent = nT ? pct(nC/nT*100) : '—';
+    $('sSpecialAcc').textContent = sT ? pct(sC/sT*100) : '—';
+    $('sOverallAcc').textContent = (nT+sT) ? pct((nC+sC)/(nT+sT)*100) : '—';
+  }
+
+  function badges(arr, cls=''){
+    if(!arr || !arr.length) return '—';
+    return arr.map(x=>`<span class="badge ${cls}">${x}</span>`).join('');
+  }
+
+  function renderHistory(){
+    const body = $('historyBody');
+    body.innerHTML = '';
+    [...state.records].sort((a,b)=>compareRecords(b,a)).forEach(r=>{
+      const s = scoreRecord(r);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><b>${r.date}</b></td>
+        <td><span class="badge">Lần ${r.session || 1}</span></td>
+        <td>${badges(r.normalExclude)}</td>
+        <td>${badges(r.specialExclude)}</td>
+        <td>${badges(r.normalActual,'ok')}</td>
+        <td>${badges(r.specialActual,'ok')}</td>
+        <td>${s ? `${s.normalCorrect}/${s.normalTotal} (${pct(s.normalPct)})` : '—'}</td>
+        <td>${s ? `${s.specialCorrect}/${s.specialTotal} (${pct(s.specialPct)})` : '—'}</td>
+        <td>${s ? `T: ${badges(s.nCollision,'bad')}<br>ĐB: ${badges(s.sCollision,'bad')}` : '—'}</td>`;
+      tr.onclick = () => {
+        $('drawDate').value = r.date;
+        $('drawSession').value = String(r.session || 1);
+        loadRecordIntoUI(r.date, r.session || 1);
+      };
+      body.appendChild(tr);
+    });
+  }
+
+  function loadRecordIntoUI(date, session=currentSession()){
+    const r = getRecord(date, session);
+    ui.normalExclude = new Set(r?.normalExclude || []);
+    ui.specialExclude = new Set(r?.specialExclude || []);
+    ui.normalActual = new Set(r?.normalActual || []);
+    ui.specialActual = new Set(r?.specialActual || []);
+    renderAllChips();
+    renderCurrentScore();
+  }
+
+  function rankNumbers(type){
+    const max = type==='normal' ? 35 : 12;
+    const actualKey = type==='normal' ? 'normalActual' : 'specialActual';
+    const exKey = type==='normal' ? 'normalExclude' : 'specialExclude';
+    const draws = state.records.filter(r => Array.isArray(r[actualKey]) && r[actualKey].length).sort(compareRecords);
+    const recent = draws.slice(-10);
+    const rows = [];
+    for(let n=1;n<=max;n++){
+      const appeared = draws.filter(r => r[actualKey].includes(n)).length;
+      const recentAppeared = recent.filter(r => r[actualKey].includes(n)).length;
+      const absenceRate = draws.length ? 1 - appeared/draws.length : 0.5;
+      const recentAbsence = recent.length ? 1 - recentAppeared/recent.length : 0.5;
+      const exTrials = draws.filter(r => (r[exKey]||[]).includes(n));
+      const exSuccess = exTrials.filter(r => !r[actualKey].includes(n)).length;
+      const userExAcc = (exSuccess + 1) / (exTrials.length + 2);
+      const score = 0.55*absenceRate + 0.25*recentAbsence + 0.20*userExAcc;
+      rows.push({n,score,absenceRate,recentAbsence,userExAcc,trials:exTrials.length});
+    }
+    return rows.sort((a,b)=>b.score-a.score || a.n-b.n);
+  }
+
+  function calculateRecommendation(){
+    const nN = Math.max(0, Math.min(30, Number($('recommendNormalN').value)||0));
+    const sN = Math.max(0, Math.min(11, Number($('recommendSpecialN').value)||0));
+    ui.recommendation.normal = rankNumbers('normal').slice(0,nN);
+    ui.recommendation.special = rankNumbers('special').slice(0,sN);
+    renderRecommendation();
+  }
+
+  function renderRecommendation(){
+    const render = (id, arr) => {
+      $(id).innerHTML = arr.length ? arr.map(x =>
+        `<span class="score-chip" title="Vắng toàn lịch sử: ${(x.absenceRate*100).toFixed(1)}%; vắng 10 kỳ gần: ${(x.recentAbsence*100).toFixed(1)}%; hiệu quả loại riêng số này: ${(x.userExAcc*100).toFixed(1)}% trên ${x.trials} lần"><b>${x.n}</b> · score ${(x.score*100).toFixed(1)}</span>`
+      ).join('') : '<span class="small">Chưa có gợi ý.</span>';
+    };
+    render('normalRecommend', ui.recommendation.normal);
+    render('specialRecommend', ui.recommendation.special);
+  }
+
+  function renderEverything(){
+    renderAllChips();
+    renderStats();
+    renderHistory();
+    calculateRecommendation();
+    renderCurrentScore();
+  }
+
+  function startFirebaseRealtimeSync(){
+    db.ref('.info/connected').on('value', snap => {
+      const connected = snap.val() === true;
+      if(connected){
+        firebaseReady = true;
+        setCloudStatus('● Firebase đã kết nối', 'ok');
+      }else if(firebaseReady){
+        setCloudStatus('● Mất kết nối Firebase - đang dùng cache trên máy', 'bad');
+      }
+    });
+
+    recordsRef.on('value', snapshot => {
+      const cloudRecords = firebaseObjectToRecords(snapshot.val());
+      if(cloudRecords.length || snapshot.exists()){
+        state = {records: cloudRecords};
+        saveLocal();
+        renderEverything();
+        loadRecordIntoUI($('drawDate').value);
+      }
+    }, err => {
+      console.error('Firebase read error:', err);
+      setCloudStatus('● Không đọc được Firebase: ' + err.code, 'bad');
+    });
+
+    // Nếu Firebase đang trống nhưng máy cũ đã có localStorage, tự migrate lên cloud.
+    recordsRef.once('value').then(async snapshot => {
+      if(!snapshot.exists() && state.records.length){
+        try{
+          await save();
+          setCloudStatus('● Đã chuyển dữ liệu local lên Firebase', 'ok');
+        }catch(e){}
+      }
+    }).catch(err => console.error('Firebase initial load error:', err));
+  }
+
+  $('todayBtn').onclick = () => {
+    $('drawDate').value = todayISO();
+    loadRecordIntoUI($('drawDate').value, currentSession());
+  };
+  $('drawDate').onchange = () => loadRecordIntoUI($('drawDate').value, currentSession());
+  $('drawSession').onchange = () => loadRecordIntoUI($('drawDate').value, currentSession());
+
+  $('savePredictionBtn').onclick = async () => {
+    const date = $('drawDate').value;
+    if(!date) return alert('Hãy chọn ngày.');
+    try{
+      await upsertRecord({
+        date,
+        session: currentSession(),
+        normalExclude:[...ui.normalExclude].sort((a,b)=>a-b),
+        specialExclude:[...ui.specialExclude].sort((a,b)=>a-b)
+      });
+      renderEverything();
+      alert(`Đã lưu dự đoán ngày ${date} - Lần ${currentSession()} lên Firebase.`);
+    }catch(err){
+      alert('Dữ liệu đã lưu trên máy nhưng Firebase chưa ghi được. Kiểm tra Rules / databaseURL.');
+    }
+  };
+
+  $('saveResultBtn').onclick = async () => {
+    const date = $('drawDate').value;
+    if(!date) return alert('Hãy chọn ngày.');
+    if(ui.normalActual.size !== 5) return alert('Kết quả thường phải chọn đúng 5 số.');
+    if(ui.specialActual.size !== 1) return alert('Kết quả đặc biệt phải chọn đúng 1 số.');
+    const session = currentSession();
+    const old = getRecord(date, session) || {date,session,normalExclude:[],specialExclude:[]};
+    try{
+      await upsertRecord({
+        ...old,
+        date,
+        session,
+        normalActual:[...ui.normalActual].sort((a,b)=>a-b),
+        specialActual:[...ui.specialActual]
+      });
+      renderEverything();
+      alert(`Đã lưu kết quả ngày ${date} - Lần ${session} lên Firebase và tính tỷ lệ khớp.`);
+    }catch(err){
+      alert('Dữ liệu đã lưu trên máy nhưng Firebase chưa ghi được. Kiểm tra Rules / databaseURL.');
+    }
+  };
+
+  $('clearPredictionBtn').onclick = () => { ui.normalExclude.clear(); ui.specialExclude.clear(); renderAllChips(); };
+  $('clearResultBtn').onclick = () => { ui.normalActual.clear(); ui.specialActual.clear(); renderAllChips(); renderCurrentScore(); };
+  $('refreshRecommendBtn').onclick = calculateRecommendation;
+  $('applyRecommendBtn').onclick = () => {
+    calculateRecommendation();
+    ui.normalExclude = new Set(ui.recommendation.normal.map(x=>x.n));
+    ui.specialExclude = new Set(ui.recommendation.special.map(x=>x.n));
+    renderAllChips();
+  };
+
+  $('resetBtn').onclick = async () => {
+    if(confirm('Reset toàn bộ chu kỳ? Tất cả lịch sử, dự đoán và kết quả trên Firebase sẽ bị xóa.')){
+      state = {records:[]};
+      ui.normalExclude.clear(); ui.specialExclude.clear(); ui.normalActual.clear(); ui.specialActual.clear();
+      ui.recommendation = {normal:[],special:[]};
+      try{
+        await save();
+        renderEverything();
+        alert('Đã reset dữ liệu trên Firebase.');
+      }catch(err){
+        renderEverything();
+        alert('Đã reset dữ liệu local nhưng Firebase chưa ghi được.');
+      }
+    }
+  };
+
+  $('exportBtn').onclick = () => {
+    const blob = new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = '6_35_tracker_2lan_backup.json';
+    a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  };
+
+  $('importBtn').onclick = () => $('importFile').click();
+  $('importFile').onchange = e => {
+    const f = e.target.files[0];
+    if(!f) return;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try{
+        const obj = JSON.parse(reader.result);
+        state = normalizeState(obj);
+        await save();
+        renderEverything();
+        alert('Đã nhập dữ liệu và đồng bộ lên Firebase.');
+      }catch(err){
+        alert('File JSON không hợp lệ hoặc Firebase chưa ghi được.');
+      }
+    };
+    reader.readAsText(f);
+  };
+
+  // Khởi động: đọc cache trước để giao diện mở nhanh, sau đó Firebase sẽ đồng bộ realtime.
+  loadLocal();
+  $('drawDate').value = todayISO();
+  $('drawSession').value = '1';
+  loadRecordIntoUI($('drawDate').value, currentSession());
+  renderEverything();
+  startFirebaseRealtimeSync();
+})();
+</script>
+</body>
+</html>
