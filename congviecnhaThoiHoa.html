@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Công Việc Nhà Thới Hoà - V2</title>
+    <title>Công Việc Nhà Thới Hoà - V3 Chu Kỳ</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -48,6 +48,9 @@
         .status-open { color: #198754; font-weight: 700; }
         .status-closed { color: #dc3545; font-weight: 700; }
         .history-summary-card { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 8px; }
+        .recurrence-badge { display: inline-block; margin-top: 2px; padding: 1px 5px; border-radius: 999px; background: #eef2ff; color: #3949ab; font-size: 9px; font-weight: 700; }
+        .recurrence-help { font-size: 10px; color: #6c757d; }
+        .cycle-control .form-select, .cycle-control .form-control { min-height: 31px; }
     </style>
 </head>
 <body>
@@ -55,8 +58,8 @@
 <div class="container-fluid py-3">
     <div class="header-title shadow-sm mb-3 d-flex flex-wrap justify-content-between align-items-center">
         <div>
-            <h4 class="mb-1"><i class="fa-solid fa-list-check me-2"></i>Bảng Công Việc Nhà - V2</h4>
-            <p class="mb-0 small text-light">Đồng bộ thời gian thực • Select All theo người/ngày • Sửa task • Lịch sử task</p>
+            <h4 class="mb-1"><i class="fa-solid fa-list-check me-2"></i>Bảng Công Việc Nhà - V3</h4>
+            <p class="mb-0 small text-light">Đồng bộ thời gian thực • Chu kỳ task • Select All theo người/ngày • Sửa task • Lịch sử task</p>
         </div>
         <div class="d-flex gap-2 mt-2 mt-md-0 flex-wrap">
             <button class="btn btn-warning btn-sm fw-bold" onclick="openAllTaskHistory()"><i class="fa-solid fa-clock-rotate-left me-1"></i>Lịch sử task</button>
@@ -92,11 +95,30 @@
 
     <div class="card shadow-sm">
         <div class="card-body p-2">
-            <div class="input-group input-group-sm">
-                <span class="input-group-text bg-primary text-white fw-bold"><i class="fa-solid fa-plus me-1"></i> Thêm việc mới:</span>
-                <input type="text" id="new-task-name" class="form-control" placeholder="Nhập tên việc nhà cần làm vào đây..." onkeydown="if(event.key==='Enter') addNewTask()">
-                <button class="btn btn-primary fw-bold" type="button" onclick="addNewTask()">Lưu Lại</button>
+            <div class="row g-2 align-items-end cycle-control">
+                <div class="col-lg-6 col-md-12">
+                    <label class="form-label fw-bold mb-1"><i class="fa-solid fa-plus me-1 text-primary"></i>Thêm việc mới</label>
+                    <input type="text" id="new-task-name" class="form-control form-control-sm" placeholder="Nhập tên việc nhà cần làm vào đây..." onkeydown="if(event.key==='Enter') addNewTask()">
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <label class="form-label fw-bold mb-1">Chu kỳ</label>
+                    <select id="new-task-recurrence" class="form-select form-select-sm" onchange="syncRecurrenceIntervalUI('new')">
+                        <option value="once">1 lần đến khi xong/xóa</option>
+                        <option value="daily" selected>Hằng x ngày</option>
+                        <option value="weekly">Hằng x tuần</option>
+                        <option value="monthly">Hằng x tháng</option>
+                        <option value="yearly">Hằng x năm</option>
+                    </select>
+                </div>
+                <div class="col-lg-1 col-md-3">
+                    <label class="form-label fw-bold mb-1">x</label>
+                    <input type="number" id="new-task-interval" class="form-control form-control-sm" min="1" step="1" value="1" inputmode="numeric">
+                </div>
+                <div class="col-lg-2 col-md-3 d-grid">
+                    <button class="btn btn-primary btn-sm fw-bold" type="button" onclick="addNewTask()"><i class="fa-solid fa-floppy-disk me-1"></i>Lưu Lại</button>
+                </div>
             </div>
+            <div class="recurrence-help mt-1">Ngày bắt đầu của task mới là ngày tạo. Task định kỳ xuất hiện ở tuần có ít nhất một ngày đến hạn theo chu kỳ.</div>
         </div>
     </div>
 </div>
@@ -113,6 +135,22 @@
         <input type="hidden" id="edit-task-id">
         <label class="form-label fw-bold">Tên công việc</label>
         <input type="text" id="edit-task-name" class="form-control" maxlength="300">
+        <div class="row g-2 mt-1 cycle-control">
+          <div class="col-8">
+            <label class="form-label fw-bold mb-1">Chu kỳ</label>
+            <select id="edit-task-recurrence" class="form-select" onchange="syncRecurrenceIntervalUI('edit')">
+              <option value="once">1 lần đến khi xong/xóa</option>
+              <option value="daily">Hằng x ngày</option>
+              <option value="weekly">Hằng x tuần</option>
+              <option value="monthly">Hằng x tháng</option>
+              <option value="yearly">Hằng x năm</option>
+            </select>
+          </div>
+          <div class="col-4">
+            <label class="form-label fw-bold mb-1">x</label>
+            <input type="number" id="edit-task-interval" class="form-control" min="1" step="1" value="1" inputmode="numeric">
+          </div>
+        </div>
         <div id="edit-task-meta" class="small text-muted mt-2"></div>
       </div>
       <div class="modal-footer">
@@ -137,7 +175,7 @@
           <table class="table table-sm table-striped history-table">
             <thead class="table-light sticky-top">
               <tr>
-                <th>Task</th><th>Ngày tạo</th><th>Last edited</th><th>Ẩn/đóng</th><th>Trạng thái</th><th>Thao tác</th>
+                <th>Task</th><th>Chu kỳ</th><th>Ngày tạo</th><th>Last edited</th><th>Xong/đóng</th><th>Trạng thái</th><th>Thao tác</th>
               </tr>
             </thead>
             <tbody id="all-task-history-body"></tbody>
@@ -236,7 +274,7 @@
         { id: "d30", name: "30. Ngắt điện sạc xe / Hẹn giờ sạc pin xe", isDefault: true },
         { id: "d31", name: "31. Ngắt điện sạc điện thoại / Hẹn giờ sạc điện thoại", isDefault: true },
         { id: "d32", name: "32. Đi ngủ", isDefault: true }
-    ];
+    ].map(task => ({ ...task, recurrenceType: 'daily', recurrenceInterval: 1, startDate: '2000-01-01', endDate: null }));
 
     function escapeHtml(value) {
         return String(value ?? '')
@@ -268,6 +306,128 @@
         return d.toLocaleString('vi-VN');
     }
 
+    const RECURRENCE_TYPES = new Set(['once','daily','weekly','monthly','yearly']);
+
+    function normalizeRecurrenceType(value) {
+        const type = String(value || 'daily').toLowerCase();
+        return RECURRENCE_TYPES.has(type) ? type : 'daily';
+    }
+
+    function normalizeRecurrenceInterval(value) {
+        const n = Math.floor(Number(value));
+        return Number.isFinite(n) && n >= 1 ? n : 1;
+    }
+
+    function recurrenceLabel(task) {
+        const type = normalizeRecurrenceType(task?.recurrenceType);
+        const x = normalizeRecurrenceInterval(task?.recurrenceInterval);
+        if (type === 'once') return '1 lần đến khi xong/xóa';
+        if (type === 'daily') return `Hằng ${x} ngày`;
+        if (type === 'weekly') return `Hằng ${x} tuần`;
+        if (type === 'monthly') return `Hằng ${x} tháng`;
+        if (type === 'yearly') return `Hằng ${x} năm`;
+        return 'Hằng 1 ngày';
+    }
+
+    function syncRecurrenceIntervalUI(prefix) {
+        const select = document.getElementById(`${prefix}-task-recurrence`);
+        const input = document.getElementById(`${prefix}-task-interval`);
+        if (!select || !input) return;
+        const isOnce = select.value === 'once';
+        input.disabled = isOnce;
+        if (isOnce) input.value = '1';
+        input.title = isOnce ? 'Không cần nhập x cho task 1 lần.' : 'Nhập số chu kỳ x (tối thiểu 1).';
+    }
+
+    function parseLocalDateOnly(value) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value || ''))) return null;
+        const [y,m,d] = String(value).split('-').map(Number);
+        const result = new Date(y, m - 1, d);
+        result.setHours(0,0,0,0);
+        return Number.isNaN(result.getTime()) ? null : result;
+    }
+
+    function dateDayNumber(date) {
+        return Math.floor(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86400000);
+    }
+
+    function daysBetween(a, b) { return dateDayNumber(b) - dateDayNumber(a); }
+
+    function addDays(base, days) {
+        const d = new Date(base);
+        d.setDate(d.getDate() + days);
+        d.setHours(0,0,0,0);
+        return d;
+    }
+
+    function daysInMonth(year, monthIndex) { return new Date(year, monthIndex + 1, 0).getDate(); }
+
+    function addMonthsClamped(base, months) {
+        const targetIndex = base.getMonth() + months;
+        const targetYear = base.getFullYear() + Math.floor(targetIndex / 12);
+        const targetMonth = ((targetIndex % 12) + 12) % 12;
+        const day = Math.min(base.getDate(), daysInMonth(targetYear, targetMonth));
+        const d = new Date(targetYear, targetMonth, day);
+        d.setHours(0,0,0,0);
+        return d;
+    }
+
+    function addYearsClamped(base, years) {
+        const targetYear = base.getFullYear() + years;
+        const day = Math.min(base.getDate(), daysInMonth(targetYear, base.getMonth()));
+        const d = new Date(targetYear, base.getMonth(), day);
+        d.setHours(0,0,0,0);
+        return d;
+    }
+
+    function taskShouldDisplayInWeek(task, weekStart, weekEnd) {
+        const start = parseLocalDateOnly(task?.startDate || (task?.isDefault ? '2000-01-01' : ''));
+        if (!start) return false;
+
+        const closed = task?.endDate ? parseLocalDateOnly(task.endDate) : null;
+        const effectiveStart = start > weekStart ? start : weekStart;
+        const effectiveEnd = closed && closed < weekEnd ? closed : weekEnd;
+        if (effectiveStart > effectiveEnd) return false;
+
+        const type = normalizeRecurrenceType(task?.recurrenceType);
+        const interval = normalizeRecurrenceInterval(task?.recurrenceInterval);
+
+        // Task 1 lần tồn tại liên tục từ ngày tạo/bắt đầu tới ngày xong/đóng.
+        if (type === 'once') return true;
+
+        if (type === 'daily' || type === 'weekly') {
+            const periodDays = interval * (type === 'weekly' ? 7 : 1);
+            const diff = daysBetween(start, effectiveStart);
+            const k = diff <= 0 ? 0 : Math.ceil(diff / periodDays);
+            const occurrence = addDays(start, k * periodDays);
+            return occurrence <= effectiveEnd;
+        }
+
+        if (type === 'monthly') {
+            const monthDiff = (effectiveStart.getFullYear() - start.getFullYear()) * 12 + (effectiveStart.getMonth() - start.getMonth());
+            let k = Math.max(0, Math.floor(monthDiff / interval) - 1);
+            for (let i = 0; i < 6; i++, k++) {
+                const occurrence = addMonthsClamped(start, k * interval);
+                if (occurrence >= effectiveStart && occurrence <= effectiveEnd) return true;
+                if (occurrence > effectiveEnd) return false;
+            }
+            return false;
+        }
+
+        if (type === 'yearly') {
+            const yearDiff = effectiveStart.getFullYear() - start.getFullYear();
+            let k = Math.max(0, Math.floor(yearDiff / interval) - 1);
+            for (let i = 0; i < 6; i++, k++) {
+                const occurrence = addYearsClamped(start, k * interval);
+                if (occurrence >= effectiveStart && occurrence <= effectiveEnd) return true;
+                if (occurrence > effectiveEnd) return false;
+            }
+            return false;
+        }
+
+        return false;
+    }
+
     function normalizeTask(task, fallbackId, index) {
         const source = (task && typeof task === 'object') ? task : {};
         const id = source.id ? String(source.id) : String(fallbackId || `legacy_array_${index}`);
@@ -286,6 +446,8 @@
             isDefault: false,
             startDate,
             endDate: source.endDate || null,
+            recurrenceType: normalizeRecurrenceType(source.recurrenceType || 'daily'),
+            recurrenceInterval: normalizeRecurrenceInterval(source.recurrenceInterval || 1),
             createdAt,
             lastEditedAt: source.lastEditedAt || null,
             closedAt: source.closedAt || (source.endDate ? new Date(source.endDate + 'T23:59:59').toISOString() : null),
@@ -302,7 +464,7 @@
             data.forEach((task, index) => {
                 if (!task) return;
                 const normalized = normalizeTask(task, task.id || `legacy_array_${index}`, index);
-                if (!task.id || task.createdAt === undefined || task.lastEditedAt === undefined || task.closedAt === undefined || !Array.isArray(task.editHistory) || !Array.isArray(task.lifecycleHistory)) changed = true;
+                if (!task.id || task.createdAt === undefined || task.lastEditedAt === undefined || task.closedAt === undefined || task.recurrenceType === undefined || task.recurrenceInterval === undefined || !Array.isArray(task.editHistory) || !Array.isArray(task.lifecycleHistory)) changed = true;
                 result.push(normalized);
             });
         } else if (data && typeof data === 'object') {
@@ -418,20 +580,16 @@
     }
 
     function getVisibleTasksForCurrentWeek() {
-        const startOfWeek = getStartOfWeek(currentWeekOffset);
-        const startOfWeekTime = startOfWeek.getTime();
-        const endOfWeekTime = startOfWeekTime + (7 * 24 * 60 * 60 * 1000);
-        const allTasks = [...defaultTasks];
+        const weekStart = getStartOfWeek(currentWeekOffset);
+        const weekEnd = addDays(weekStart, 6);
+        const allTasks = [];
+
+        defaultTasks.forEach(task => {
+            if (taskShouldDisplayInWeek(task, weekStart, weekEnd)) allTasks.push(task);
+        });
 
         customTasks.forEach(task => {
-            const taskStartTime = new Date((task.startDate || '2000-01-01') + 'T00:00:00').getTime();
-            const isStarted = !Number.isNaN(taskStartTime) && taskStartTime < endOfWeekTime;
-            let isNotEndedYet = true;
-            if (task.endDate) {
-                const taskEndTime = new Date(task.endDate + 'T00:00:00').getTime();
-                if (!Number.isNaN(taskEndTime) && taskEndTime < startOfWeekTime) isNotEndedYet = false;
-            }
-            if (isStarted && isNotEndedYet) allTasks.push(task);
+            if (taskShouldDisplayInWeek(task, weekStart, weekEnd)) allTasks.push(task);
         });
         return allTasks;
     }
@@ -447,16 +605,21 @@
             const taskIdJs = escapeJsString(task.id);
             let rowHtml = `<tr class="task-row">`;
             const taskMeta = task.isDefault ? 'Mặc định' : `Tạo: ${task.createdAt ? formatDateOnly(task.createdAt) : 'dữ liệu cũ'}`;
+            const cycleMeta = recurrenceLabel(task);
 
             rowHtml += `<td class="text-start fw-semibold p-2 sticky-col">
                 <div class="d-flex flex-column justify-content-between h-100">
                     <span class="task-text mb-1">${escapeHtml(task.name)}</span>
-                    <span class="task-meta mb-1">${escapeHtml(taskMeta)}</span>
+                    <span class="task-meta">${escapeHtml(taskMeta)}</span>
+                    <span class="recurrence-badge mb-1"><i class="fa-solid fa-repeat me-1"></i>${escapeHtml(cycleMeta)}</span>
                     <div class="d-flex gap-1 mt-auto flex-wrap">
                         <button class="btn btn-info btn-xs px-1" onclick="openTaskHistory('${taskIdJs}')" title="Xem lịch sử"><i class="fa-solid fa-clock-rotate-left"></i></button>
                         ${!task.isDefault ? `
                             <button class="btn btn-warning btn-xs px-1" onclick="openEditTask('${taskIdJs}')" title="Sửa task"><i class="fa-solid fa-pen"></i></button>
-                            <button class="btn btn-secondary btn-xs px-1" onclick="stopShowingNextWeek('${taskIdJs}')" title="Không hiển thị từ tuần sau"><i class="fa-solid fa-eye-slash"></i> Ẩn sau</button>
+                            ${!task.endDate ? (normalizeRecurrenceType(task.recurrenceType) === 'once'
+                                ? `<button class="btn btn-success btn-xs px-1" onclick="completeOneTimeTask('${taskIdJs}')" title="Đánh dấu công việc 1 lần đã xong"><i class="fa-solid fa-check"></i> Xong</button>`
+                                : `<button class="btn btn-secondary btn-xs px-1" onclick="stopShowingNextWeek('${taskIdJs}')" title="Đóng/ẩn các kỳ sau"><i class="fa-solid fa-eye-slash"></i> Ẩn sau</button>`
+                            ) : ''}
                             <button class="btn btn-link text-danger p-0 px-1 m-0" onclick="deleteTask('${taskIdJs}')" title="Xóa vĩnh viễn"><i class="fa-solid fa-trash-can"></i></button>
                         ` : ''}
                     </div>
@@ -571,20 +734,30 @@
         const name = nameInput.value.trim();
         if (!name) { alert('Bạn chưa nhập tên công việc!'); return; }
 
+        const recurrenceType = normalizeRecurrenceType(document.getElementById('new-task-recurrence')?.value);
+        const recurrenceInterval = recurrenceType === 'once' ? 1 : normalizeRecurrenceInterval(document.getElementById('new-task-interval')?.value);
+        if (recurrenceType !== 'once' && Number(document.getElementById('new-task-interval')?.value) < 1) {
+            alert('Số chu kỳ x phải từ 1 trở lên.'); return;
+        }
+
         const todayStr = localDateISO();
         const createdAt = nowIso();
         const newTask = {
             id: 'custom_' + Date.now(), name, isDefault: false,
             startDate: todayStr, endDate: null,
+            recurrenceType, recurrenceInterval,
             createdAt, lastEditedAt: null, closedAt: null,
             editHistory: [],
-            lifecycleHistory: [{ at: createdAt, action: 'created', note: 'Tạo công việc' }]
+            lifecycleHistory: [{ at: createdAt, action: 'created', note: 'Tạo công việc', recurrenceType, recurrenceInterval }]
         };
 
         customTasks.push(newTask);
         saveCustomTasks().then(() => {
-            addAuditEvent(newTask.id, { type: 'lifecycle', action: 'created', name });
+            addAuditEvent(newTask.id, { type: 'lifecycle', action: 'created', name, recurrenceType, recurrenceInterval });
             nameInput.value = '';
+            document.getElementById('new-task-recurrence').value = 'daily';
+            document.getElementById('new-task-interval').value = '1';
+            syncRecurrenceIntervalUI('new');
         }).catch(error => {
             console.error('Lỗi thêm task:', error);
             alert('Không lưu được công việc: ' + error.message);
@@ -600,7 +773,10 @@
         if (!task) { alert('Không tìm thấy task để sửa.'); return; }
         document.getElementById('edit-task-id').value = task.id;
         document.getElementById('edit-task-name').value = task.name;
-        document.getElementById('edit-task-meta').innerHTML = `Ngày tạo: <b>${task.createdAt ? formatDateTime(task.createdAt) : 'Không xác định (dữ liệu cũ)'}</b><br>Last edited: <b>${formatDateTime(task.lastEditedAt)}</b>`;
+        document.getElementById('edit-task-recurrence').value = normalizeRecurrenceType(task.recurrenceType);
+        document.getElementById('edit-task-interval').value = normalizeRecurrenceInterval(task.recurrenceInterval);
+        syncRecurrenceIntervalUI('edit');
+        document.getElementById('edit-task-meta').innerHTML = `Ngày bắt đầu: <b>${formatDateOnly(task.startDate)}</b><br>Ngày tạo: <b>${task.createdAt ? formatDateTime(task.createdAt) : 'Không xác định (dữ liệu cũ)'}</b><br>Last edited: <b>${formatDateTime(task.lastEditedAt)}</b>`;
         new bootstrap.Modal(document.getElementById('editTaskModal')).show();
         setTimeout(() => document.getElementById('edit-task-name').focus(), 200);
     }
@@ -612,22 +788,49 @@
         const index = customTasks.findIndex(t => String(t.id) === String(taskId));
         if (index < 0) { alert('Không tìm thấy task để lưu.'); return; }
 
+        const newRecurrenceType = normalizeRecurrenceType(document.getElementById('edit-task-recurrence')?.value);
+        const rawInterval = Number(document.getElementById('edit-task-interval')?.value);
+        if (newRecurrenceType !== 'once' && (!Number.isFinite(rawInterval) || rawInterval < 1)) {
+            alert('Số chu kỳ x phải từ 1 trở lên.'); return;
+        }
+        const newRecurrenceInterval = newRecurrenceType === 'once' ? 1 : normalizeRecurrenceInterval(rawInterval);
+
         const task = customTasks[index];
         const oldName = task.name;
-        if (oldName === newName) {
+        const oldRecurrenceType = normalizeRecurrenceType(task.recurrenceType);
+        const oldRecurrenceInterval = normalizeRecurrenceInterval(task.recurrenceInterval);
+        const nameChanged = oldName !== newName;
+        const cycleChanged = oldRecurrenceType !== newRecurrenceType || oldRecurrenceInterval !== newRecurrenceInterval;
+
+        if (!nameChanged && !cycleChanged) {
             bootstrap.Modal.getInstance(document.getElementById('editTaskModal'))?.hide();
             return;
         }
+
         const editedAt = nowIso();
         task.name = newName;
+        task.recurrenceType = newRecurrenceType;
+        task.recurrenceInterval = newRecurrenceInterval;
         task.lastEditedAt = editedAt;
         task.editHistory = Array.isArray(task.editHistory) ? task.editHistory : [];
-        task.editHistory.push({ at: editedAt, oldName, newName });
+        task.editHistory.push({
+            at: editedAt, oldName, newName,
+            oldRecurrenceType, oldRecurrenceInterval,
+            newRecurrenceType, newRecurrenceInterval
+        });
         task.lifecycleHistory = Array.isArray(task.lifecycleHistory) ? task.lifecycleHistory : [];
-        task.lifecycleHistory.push({ at: editedAt, action: 'edited', oldName, newName });
+        task.lifecycleHistory.push({
+            at: editedAt, action: 'edited', oldName, newName,
+            oldRecurrenceType, oldRecurrenceInterval,
+            newRecurrenceType, newRecurrenceInterval
+        });
 
         saveCustomTasks().then(() => {
-            addAuditEvent(taskId, { type: 'lifecycle', action: 'edited', oldName, newName });
+            addAuditEvent(taskId, {
+                type: 'lifecycle', action: 'edited', oldName, newName,
+                oldRecurrenceType, oldRecurrenceInterval,
+                newRecurrenceType, newRecurrenceInterval
+            });
             bootstrap.Modal.getInstance(document.getElementById('editTaskModal'))?.hide();
         }).catch(error => {
             console.error('Lỗi sửa task:', error);
@@ -635,10 +838,12 @@
         });
     }
 
-    function stopShowingNextWeek(taskId) {
+    function completeOneTimeTask(taskId) {
         const task = customTasks.find(t => String(t.id) === String(taskId));
-        if (!task) { alert('Không tìm thấy task để ẩn.'); return; }
-        if (!confirm('Ẩn công việc này từ tuần sau? Lịch sử cũ vẫn được giữ lại.')) return;
+        if (!task) { alert('Không tìm thấy task để đánh dấu xong.'); return; }
+        if (normalizeRecurrenceType(task.recurrenceType) !== 'once') return;
+        if (task.endDate) { alert('Task này đã được đánh dấu xong/đóng.'); return; }
+        if (!confirm('Đánh dấu công việc 1 lần này là ĐÃ XONG từ hôm nay? Lịch sử cũ vẫn được giữ lại.')) return;
 
         const todayStr = localDateISO();
         const at = nowIso();
@@ -646,11 +851,29 @@
         task.closedAt = at;
         task.lastEditedAt = at;
         task.lifecycleHistory = Array.isArray(task.lifecycleHistory) ? task.lifecycleHistory : [];
-        task.lifecycleHistory.push({ at, action: 'closed', endDate: todayStr, note: 'Ẩn từ tuần sau' });
+        task.lifecycleHistory.push({ at, action: 'completed', endDate: todayStr, note: 'Đánh dấu đã xong' });
 
         saveCustomTasks().then(() => {
-            addAuditEvent(taskId, { type: 'lifecycle', action: 'closed', endDate: todayStr, note: 'Ẩn từ tuần sau' });
-            alert('Đã thiết lập. Việc này vẫn hiện ở tuần hiện tại và ẩn từ các tuần sau.');
+            addAuditEvent(taskId, { type: 'lifecycle', action: 'completed', endDate: todayStr, note: 'Đánh dấu đã xong' });
+        }).catch(error => alert('Không lưu được trạng thái hoàn thành: ' + error.message));
+    }
+
+    function stopShowingNextWeek(taskId) {
+        const task = customTasks.find(t => String(t.id) === String(taskId));
+        if (!task) { alert('Không tìm thấy task để ẩn.'); return; }
+        if (!confirm('Đóng/ẩn công việc định kỳ này từ hôm nay? Các kỳ sau ngày hôm nay sẽ không còn xuất hiện. Lịch sử cũ vẫn được giữ lại.')) return;
+
+        const todayStr = localDateISO();
+        const at = nowIso();
+        task.endDate = todayStr;
+        task.closedAt = at;
+        task.lastEditedAt = at;
+        task.lifecycleHistory = Array.isArray(task.lifecycleHistory) ? task.lifecycleHistory : [];
+        task.lifecycleHistory.push({ at, action: 'closed', endDate: todayStr, note: 'Đóng/ẩn các kỳ sau' });
+
+        saveCustomTasks().then(() => {
+            addAuditEvent(taskId, { type: 'lifecycle', action: 'closed', endDate: todayStr, note: 'Đóng/ẩn các kỳ sau' });
+            alert('Đã đóng/ẩn. Chỉ các lần đến hạn không muộn hơn hôm nay mới còn được tính trong lịch sử.');
         }).catch(error => alert('Không lưu được trạng thái ẩn: ' + error.message));
     }
 
@@ -731,19 +954,21 @@
     function renderAllTaskHistoryBody() {
         const body = document.getElementById('all-task-history-body');
         if (!customTasks.length) {
-            body.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Chưa có task tự thêm.</td></tr>';
+            body.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Chưa có task tự thêm.</td></tr>';
             return;
         }
 
         body.innerHTML = [...customTasks].sort((a,b) => (b.createdAt || '').localeCompare(a.createdAt || '')).map(task => {
             const closed = Boolean(task.endDate || task.closedAt);
+            const isOnce = normalizeRecurrenceType(task.recurrenceType) === 'once';
             const idJs = escapeJsString(task.id);
             return `<tr>
                 <td><b>${escapeHtml(task.name)}</b><br><small class="text-muted">ID: ${escapeHtml(task.id)}</small></td>
+                <td>${escapeHtml(recurrenceLabel(task))}</td>
                 <td>${task.createdAt ? formatDateTime(task.createdAt) : 'Không xác định'}</td>
                 <td>${formatDateTime(task.lastEditedAt)}</td>
                 <td>${task.endDate ? formatDateOnly(task.endDate) : '—'}</td>
-                <td class="${closed ? 'status-closed' : 'status-open'}">${closed ? 'Đã ẩn/đóng' : 'Đang hoạt động'}</td>
+                <td class="${closed ? 'status-closed' : 'status-open'}">${closed ? (isOnce ? 'Đã xong/đóng' : 'Đã ẩn/đóng') : 'Đang hoạt động'}</td>
                 <td>
                     <button class="btn btn-info btn-sm py-0" onclick="openTaskHistory('${idJs}')">Xem</button>
                     <button class="btn btn-warning btn-sm py-0" onclick="openEditTask('${idJs}')">Sửa</button>
@@ -764,10 +989,21 @@
             const who = event.user === 'Khac' ? 'Khác' : event.user;
             return `<div class="timeline-item"><b>${escapeHtml(who || '')}</b> ${event.action === 'checked' ? 'đã được ghi nhận hoàn thành' : 'đã bỏ ghi nhận'} ngày <b>${formatDateOnly(event.date)}</b>${event.source === 'select-all' ? ' <span class="badge badge-soft">Select All</span>' : ''}<div class="time">${at}</div></div>`;
         }
-        const actionMap = { created:'Tạo task', edited:'Sửa tên task', closed:'Ẩn/đóng task', reopened:'Mở lại task' };
+        const actionMap = { created:'Tạo task', edited:'Sửa task', closed:'Ẩn/đóng task', completed:'Đánh dấu đã xong', reopened:'Mở lại task' };
         let extra = '';
-        if (event.action === 'edited') extra = `<br><small>“${escapeHtml(event.oldName)}” → “${escapeHtml(event.newName)}”</small>`;
-        if (event.action === 'closed' && event.endDate) extra = `<br><small>Ngày đóng: ${formatDateOnly(event.endDate)}</small>`;
+        if (event.action === 'edited') {
+            const details = [];
+            if (event.oldName !== undefined && event.newName !== undefined && event.oldName !== event.newName)
+                details.push(`Tên: “${escapeHtml(event.oldName)}” → “${escapeHtml(event.newName)}”`);
+            if (event.oldRecurrenceType !== undefined || event.newRecurrenceType !== undefined) {
+                const oldCycle = recurrenceLabel({ recurrenceType:event.oldRecurrenceType, recurrenceInterval:event.oldRecurrenceInterval });
+                const newCycle = recurrenceLabel({ recurrenceType:event.newRecurrenceType, recurrenceInterval:event.newRecurrenceInterval });
+                if (oldCycle !== newCycle) details.push(`Chu kỳ: ${escapeHtml(oldCycle)} → ${escapeHtml(newCycle)}`);
+            }
+            if (details.length) extra = `<br><small>${details.join('<br>')}</small>`;
+        }
+        if ((event.action === 'closed' || event.action === 'completed') && event.endDate) extra += `<br><small>Ngày kết thúc: ${formatDateOnly(event.endDate)}</small>`;
+        if (event.action === 'created' && event.recurrenceType) extra += `<br><small>Chu kỳ: ${escapeHtml(recurrenceLabel(event))}</small>`;
         return `<div class="timeline-item"><b>${escapeHtml(actionMap[event.action] || event.action || 'Thay đổi')}</b>${extra}<div class="time">${at}</div></div>`;
     }
 
@@ -777,15 +1013,17 @@
 
         const createdText = task.isDefault ? 'Task mặc định hệ thống' : (task.createdAt ? formatDateTime(task.createdAt) : 'Không xác định (dữ liệu cũ)');
         const lastEditedText = task.isDefault ? '—' : formatDateTime(task.lastEditedAt);
-        const closedText = task.isDefault ? '—' : (task.endDate ? formatDateOnly(task.endDate) : 'Chưa đóng');
+        const closedText = task.isDefault ? '—' : (task.endDate ? formatDateOnly(task.endDate) : 'Chưa kết thúc');
+        const cycleText = recurrenceLabel(task);
         document.getElementById('task-history-summary').innerHTML = `
             <div class="history-summary-card">
                 <div class="fw-bold fs-6">${escapeHtml(task.name)}</div>
                 <div class="row mt-2 g-2 small">
-                    <div class="col-md-3"><b>ID:</b> ${escapeHtml(task.id)}</div>
+                    <div class="col-md-2"><b>ID:</b> ${escapeHtml(task.id)}</div>
+                    <div class="col-md-3"><b>Chu kỳ:</b> ${escapeHtml(cycleText)}</div>
                     <div class="col-md-3"><b>Ngày tạo:</b> ${createdText}</div>
-                    <div class="col-md-3"><b>Last edited:</b> ${lastEditedText}</div>
-                    <div class="col-md-3"><b>Ẩn/đóng:</b> ${closedText}</div>
+                    <div class="col-md-2"><b>Last edited:</b> ${lastEditedText}</div>
+                    <div class="col-md-2"><b>Xong/đóng:</b> ${closedText}</div>
                 </div>
             </div>`;
 
@@ -805,8 +1043,8 @@
             if (!events.length && !task.isDefault) {
                 events = [];
                 if (task.createdAt) events.push({ type:'lifecycle', action:'created', at:task.createdAt });
-                (task.editHistory || []).forEach(x => events.push({ type:'lifecycle', action:'edited', at:x.at, oldName:x.oldName, newName:x.newName }));
-                (task.lifecycleHistory || []).filter(x => x.action === 'closed' || x.action === 'reopened').forEach(x => events.push({ type:'lifecycle', ...x }));
+                (task.editHistory || []).forEach(x => events.push({ type:'lifecycle', action:'edited', ...x }));
+                (task.lifecycleHistory || []).filter(x => x.action === 'closed' || x.action === 'completed' || x.action === 'reopened').forEach(x => events.push({ type:'lifecycle', ...x }));
             }
 
             events.sort((a,b) => new Date(b.at || 0) - new Date(a.at || 0));
@@ -826,6 +1064,7 @@
     }
 
     window.onload = function() {
+        syncRecurrenceIntervalUI('new');
         updateCalendarDates();
         renderTable();
         try { initDataListener(); }
