@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tài chính gia đình - Theo tuần</title>
+<style>
+  :root{
+    --bg:#f4f6f9; --card:#ffffff; --line:#dfe3e8; --text:#172033; --muted:#6c757d;
+    --blue:#0d6efd; --green:#198754; --red:#dc3545; --yellow:#fff3bf; --yellow-line:#f0b429;
+    --gray:#eef1f4; --future:#eef6ff; --today:#dcecff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif;font-size:12px}
+  .wrap{width:100%;padding:6px}
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;
+    background:linear-gradient(90deg,#0d6efd,#0aa2c0);color:white;border-radius:8px;padding:8px 10px;
+  }
+  .topbar h1{font-size:18px;margin:0}
+  .topbar .sub{font-size:10px;opacity:.9;margin-top:2px}
+  .controls{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+  button{
+    border:0;border-radius:6px;padding:6px 9px;font-weight:700;cursor:pointer;font-size:11px
+  }
+  .btn-light{background:white;color:#17314f}
+  .btn-primary{background:#0d6efd;color:white}
+  .btn-danger{background:#dc3545;color:white}
+  .btn-secondary{background:#e9ecef;color:#263238}
+  .status{
+    display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:5px 8px;font-size:10px;font-weight:700;
+    background:#fff3cd;color:#664d03;white-space:nowrap
+  }
+  .status.ok{background:#d1e7dd;color:#0f5132}
+  .status.bad{background:#f8d7da;color:#842029}
+  .status.warn{background:#fff3cd;color:#664d03}
+  .dot{width:7px;height:7px;border-radius:50%;background:currentColor;display:inline-block}
+  .summary{
+    display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin:6px 0
+  }
+  .summary .box{background:white;border:1px solid var(--line);border-radius:6px;padding:5px 7px;min-width:0}
+  .summary .k{font-size:9px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .summary .v{font-size:14px;font-weight:800;margin-top:2px}
+  .week-card{background:white;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  table.finance{border-collapse:collapse;width:100%;table-layout:fixed}
+  table.finance th, table.finance td{border:1px solid var(--line);padding:1px;text-align:center;vertical-align:middle;min-width:0}
+  .day-head{background:#263238;color:white;font-size:10px;height:30px;line-height:1.15}
+  .day-head.today{background:#0d6efd}
+  .day-head.future{background:#355d83}
+  .day-head.before-start{background:#737b82}
+  .metric-head{
+    background:#f1f3f5;font-size:8px;line-height:1.05;height:28px;padding:1px!important;
+    word-break:break-word
+  }
+  .metric-head.future{background:#e7f2ff}
+  .metric-cell{height:54px;padding:2px!important;position:relative;overflow:hidden}
+  .metric-cell.locked{background:var(--gray)}
+  .metric-cell.future{background:var(--future)}
+  .metric-cell.today{box-shadow:inset 0 0 0 2px rgba(13,110,253,.22)}
+  .metric-cell.start-entry{background:var(--yellow)!important;box-shadow:inset 0 0 0 1px var(--yellow-line)}
+  .metric-cell.before-start{background:#f1f1f1;color:#999}
+  .value-big{font-size:12px;font-weight:800;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .value-formula{font-size:8px;color:#667085;line-height:1.1;margin-top:2px}
+  .entry-total{
+    min-height:12px;font-size:8px;color:#7a5300;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    margin-bottom:2px
+  }
+  .money-input{
+    width:100%;min-width:0;border:1px solid #b7c0ca;border-radius:4px;padding:3px 1px;text-align:center;
+    font-size:10px;font-weight:700;background:white;outline:none
+  }
+  .money-input:focus{border-color:#0d6efd;box-shadow:0 0 0 1px rgba(13,110,253,.2)}
+  .money-input.manual{border-color:#f0ad4e;background:#fff8e8}
+  .money-input:disabled{background:#eef1f4;color:#8a939b;border-color:#d5d9dd;cursor:not-allowed}
+  .unit{font-size:7px;color:#7d8790;margin-top:2px}
+  .before-text{font-size:9px;color:#888;line-height:1.2}
+  .panel{
+    margin-top:6px;background:white;border:1px solid var(--line);border-radius:8px;padding:7px
+  }
+  .panel h2{font-size:13px;margin:0 0 6px}
+  .panel-head{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    margin-bottom:6px;min-width:0;white-space:nowrap
+  }
+  .panel-head h2{margin:0;flex:0 0 auto}
+  .api-inline{
+    display:flex;align-items:center;justify-content:flex-end;gap:5px;
+    min-width:0;flex:1 1 auto;font-size:9px;color:#6c757d;white-space:nowrap;overflow:hidden
+  }
+  .api-inline .api-title{font-weight:800;color:#495057;flex:0 0 auto}
+  .api-inline .api-item{display:flex;align-items:center;gap:2px;min-width:0}
+  .api-inline code{
+    display:inline-block;max-width:240px;overflow:hidden;text-overflow:ellipsis;
+    white-space:nowrap;vertical-align:middle;background:#f4f6f8;border:1px solid #e1e5e9;
+    border-radius:4px;padding:2px 4px;font-size:8px;user-select:all
+  }
+  .api-inline #apiReadStatus{flex:0 0 auto;font-size:8px}
+  .formgrid{
+    display:grid;grid-template-columns:110px 120px 135px 180px 95px 1fr auto;gap:5px;align-items:end
+  }
+  .field label{display:block;font-size:9px;font-weight:700;color:#4f5964;margin-bottom:2px}
+  input,select{
+    width:100%;border:1px solid #cbd2d9;border-radius:5px;padding:5px 6px;font-size:11px;background:white
+  }
+  .hint{font-size:9px;color:#6c757d;margin-top:5px;line-height:1.3}
+  .yellow-note{display:inline-block;background:var(--yellow);border:1px solid var(--yellow-line);border-radius:4px;padding:1px 4px;color:#6c4c00}
+  .list-wrap{margin-top:7px;max-height:220px;overflow:auto;border:1px solid var(--line);border-radius:6px}
+  table.entries{width:100%;border-collapse:collapse;font-size:10px}
+  table.entries th, table.entries td{border-bottom:1px solid var(--line);padding:4px 5px;text-align:left}
+  table.entries th{position:sticky;top:0;background:#f8f9fa;z-index:1}
+  .badge{display:inline-block;border-radius:999px;padding:2px 5px;font-size:9px;font-weight:700;background:#e9ecef}
+  .badge.thu{background:#d1e7dd;color:#0f5132}
+  .badge.chi{background:#f8d7da;color:#842029}
+  .badge.ton{background:#dbeafe;color:#1e3a8a}
+  .badge.du{background:#e9d5ff;color:#581c87}
+  .muted{color:#6c757d}
+  @media(max-width:1200px){
+    body{font-size:10px}
+    .metric-head{font-size:7px}
+    .metric-cell{height:50px}
+    .value-big{font-size:10px}
+    .formgrid{grid-template-columns:repeat(3,minmax(120px,1fr))}
+  }
+  @media(max-width:800px){
+    .week-card{overflow-x:auto}
+    table.finance{min-width:1180px}
+    .summary{grid-template-columns:repeat(2,1fr)}
+    .formgrid{grid-template-columns:1fr 1fr}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div>
+      <h1>Quản lý tài chính gia đình — theo tuần</h1>
+      <div class="sub">Ngày khởi động mặc định 01/09/2026 • Tồn đầu lấy từ Firebase /config • Đơn vị: triệu đồng</div>
+    </div>
+    <div class="controls">
+      <button class="btn-light" onclick="changeWeek(-1)">◀ Tuần trước</button>
+      <button class="btn-light" onclick="goCurrentWeek()">Tuần hiện tại</button>
+      <span id="weekLabel" style="font-weight:700;font-size:11px"></span>
+      <button class="btn-light" onclick="changeWeek(1)">Tuần sau ▶</button>
+      <span id="firebaseStatus" class="status warn"><span class="dot"></span><span id="firebaseStatusText">Đang kết nối Firebase...</span></span>
+    </div>
+  </div>
+
+  <div class="summary">
+    <div class="box"><div class="k">Tồn đầu tuần</div><div class="v" id="sumOpen">—</div></div>
+    <div class="box"><div class="k">Tổng Thu / Ước thu tuần</div><div class="v" id="sumIncome">—</div></div>
+    <div class="box"><div class="k">Tổng Chi / Ước chi tuần</div><div class="v" id="sumExpense">—</div></div>
+    <div class="box"><div class="k">Dư cuối tuần</div><div class="v" id="sumClose">—</div></div>
+  </div>
+
+  <div class="week-card">
+    <table class="finance" id="financeTable">
+      <thead id="financeHead"></thead>
+      <tbody id="financeBody"></tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Thêm khoản / chu kỳ</h2>
+      <div class="api-inline" title="API số dư theo ngày">
+        <span class="api-title">API Dư:</span>
+        <span class="api-item">Tất cả <code id="apiAllUrl"></code></span>
+        <span class="api-item">Ngày <code id="apiDateUrl"></code></span>
+        <span id="apiReadStatus" class="muted"></span>
+      </div>
+    </div>
+    <div class="formgrid">
+      <div class="field">
+        <label>Loại</label>
+        <select id="entryType">
+          <option value="ton">Tồn</option>
+          <option value="thu" selected>Thu</option>
+          <option value="chi">Chi</option>
+          <option value="du">Dư</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Số tiền (triệu)</label>
+        <input id="entryAmount" type="text" inputmode="decimal" placeholder="Ví dụ 1,5">
+      </div>
+      <div class="field">
+        <label>Ngày bắt đầu</label>
+        <input id="entryDate" type="date">
+      </div>
+      <div class="field">
+        <label>Chu kỳ</label>
+        <select id="entryCycle">
+          <option value="once">1 lần</option>
+          <option value="day">Hằng ngày</option>
+          <option value="week1">Hằng 1 tuần</option>
+          <option value="week2">Hằng 2 tuần</option>
+          <option value="month1">Hằng tháng</option>
+          <option value="month2">Hằng 2 tháng</option>
+          <option value="quarter">Hằng quý</option>
+          <option value="year">Hằng năm</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Số lần X</label>
+        <input id="entryX" type="number" min="1" step="1" value="1">
+      </div>
+      <div class="field">
+        <label>Ghi chú</label>
+        <input id="entryNote" type="text" maxlength="120" placeholder="Ví dụ: Lương, điện, học phí...">
+      </div>
+      <button class="btn-primary" onclick="addEntry()">+ Thêm</button>
+    </div>
+    <div class="hint">
+      Quy ước X: <b>X = 1</b> nghĩa là chu kỳ lặp không giới hạn; <b>X &gt; 1</b> thì chỉ phát sinh đúng X lần rồi ngưng.
+      Riêng “1 lần” chỉ phát sinh ở ngày bắt đầu. Khoản được thêm sẽ <b>ghi đè logic tại ngày bắt đầu</b> và ô ngày đầu được
+      <span class="yellow-note">tô vàng</span>. Với Thu/Chi, dòng trên luôn là tổng theo chu kỳ; dòng dưới là số thực tế nhập tay. Nếu cùng ngày có nhiều khoản, dòng trên tự cộng tổng. Khi có số thực tế, Dư dùng số thực tế; nếu để trống, Dư dùng số theo chu kỳ.
+    </div>
+
+    <div class="list-wrap">
+      <table class="entries">
+        <thead>
+          <tr><th>Loại</th><th>Số tiền</th><th>Ngày bắt đầu</th><th>Chu kỳ</th><th>X</th><th>Ghi chú</th><th></th></tr>
+        </thead>
+        <tbody id="entryList"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+<script>
+(() => {
+  'use strict';
+
+  const DEFAULT_START_DATE = '2026-09-01';
+  const DEFAULT_INITIAL_OPENING = 1.5;
+  const PREVIOUS_DEFAULT_START_DATE = '2026-09-04';
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCJrzMJyTt3c2sEZWop7FdLqAt4zdv3bRU",
+    authDomain: "taichinhgiadinh-24c99.firebaseapp.com",
+    databaseURL: "https://taichinhgiadinh-24c99-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "taichinhgiadinh-24c99",
+    storageBucket: "taichinhgiadinh-24c99.firebasestorage.app",
+    messagingSenderId: "540020894511",
+    appId: "1:540020894511:web:8110861e1acdfeb7cbcfda"
+  };
+
+  const DB_BASE_URL = firebaseConfig.databaseURL.replace(/\/$/, '');
+  const DAILY_BALANCE_API_BASE = DB_BASE_URL + '/api/dailyBalance';
+
+  let db = null;
+  let currentWeekOffset = 0;
+  let startDate = DEFAULT_START_DATE;
+  let initialOpening = DEFAULT_INITIAL_OPENING;
+  let dailyOverrides = {};
+  let entries = [];
+  let apiBalances = {};
+  let dataReady = {config:false, daily:false, entries:false};
+  let connectionEverOk = false;
+  let connectionWriteChecked = false;
+  let saveTimers = {};
+  let lastComputed = {};
+  let localWriteBusy = 0;
+  let apiRebuildTimer = null;
+  let apiPublishBusy = false;
+
+  const $ = id => document.getElementById(id);
+
+  function localDateISO(d = new Date()){
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const day = String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
+  }
+
+  function parseDate(s){
+    const [y,m,d] = String(s).split('-').map(Number);
+    return new Date(y, m-1, d, 12, 0, 0, 0);
+  }
+
+  function cmpDate(a,b){ return String(a).localeCompare(String(b)); }
+
+  function addDays(dateStr, n){
+    const d = parseDate(dateStr);
+    d.setDate(d.getDate()+n);
+    return localDateISO(d);
+  }
+
+  function daysBetween(a,b){
+    const x = parseDate(a), y = parseDate(b);
+    return Math.round((y-x)/86400000);
+  }
+
+  function addMonthsClamped(dateStr, months){
+    const d = parseDate(dateStr);
+    const originalDay = d.getDate();
+    const target = new Date(d.getFullYear(), d.getMonth()+months, 1, 12);
+    const lastDay = new Date(target.getFullYear(), target.getMonth()+1, 0, 12).getDate();
+    target.setDate(Math.min(originalDay,lastDay));
+    return localDateISO(target);
+  }
+
+  function getStartOfWeek(offset=0){
+    const now = new Date();
+    const day = now.getDay();
+    const diff = day === 0 ? -6 : 1-day;
+    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate()+diff, 12);
+    monday.setDate(monday.getDate() + offset*7);
+    return localDateISO(monday);
+  }
+
+  function fmt(n){
+    if(n === null || n === undefined || Number.isNaN(Number(n))) return '—';
+    return new Intl.NumberFormat('vi-VN',{minimumFractionDigits:0,maximumFractionDigits:3}).format(Number(n));
+  }
+
+  function inputFmt(n){
+    if(n === null || n === undefined || Number.isNaN(Number(n))) return '';
+    return String(Math.round(Number(n)*1000)/1000);
+  }
+
+  function parseMoney(v){
+    const s = String(v ?? '').trim().replace(/\s/g,'').replace(',','.');
+    if(s === '') return null;
+    const n = Number(s);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function typeLabel(t){
+    return ({ton:'Tồn',thu:'Thu',chi:'Chi',du:'Dư'})[t] || t;
+  }
+
+  function cycleLabel(c){
+    return ({
+      once:'1 lần', day:'Hằng ngày', week1:'Hằng 1 tuần', week2:'Hằng 2 tuần',
+      month1:'Hằng tháng', month2:'Hằng 2 tháng', quarter:'Hằng quý', year:'Hằng năm'
+    })[c] || c;
+  }
+
+  function setStatus(text, kind='warn'){
+    $('firebaseStatusText').textContent = text;
+    $('firebaseStatus').className = 'status ' + kind;
+  }
+
+  function getNthOccurrence(entry, index){
+    const start = entry.startDate;
+    switch(entry.cycle){
+      case 'once': return index===0 ? start : null;
+      case 'day': return addDays(start,index);
+      case 'week1': return addDays(start,index*7);
+      case 'week2': return addDays(start,index*14);
+      case 'month1': return addMonthsClamped(start,index);
+      case 'month2': return addMonthsClamped(start,index*2);
+      case 'quarter': return addMonthsClamped(start,index*3);
+      case 'year': return addMonthsClamped(start,index*12);
+      default: return index===0 ? start : null;
+    }
+  }
+
+  function entryOccursOn(entry,dateStr){
+    if(!entry || entry.active === false || !entry.startDate || cmpDate(dateStr,entry.startDate) < 0) return false;
+    if(entry.cycle === 'once') return dateStr === entry.startDate;
+
+    const x = Math.max(1,parseInt(entry.x || 1,10));
+    const maxOccurrences = x > 1 ? x : 10000;
+
+    for(let i=0;i<maxOccurrences;i++){
+      const occ = getNthOccurrence(entry,i);
+      if(!occ) return false;
+      const c = cmpDate(occ,dateStr);
+      if(c === 0) return true;
+      if(c > 0) return false;
+      if(i > 5000) return false;
+    }
+    return false;
+  }
+
+  function entriesOn(dateStr,type){
+    return entries.filter(e => e.type===type && entryOccursOn(e,dateStr));
+  }
+
+  function entrySum(dateStr,type){
+    return entriesOn(dateStr,type).reduce((s,e)=>s+Number(e.amount||0),0);
+  }
+
+  function latestOverride(dateStr,type){
+    const arr = entriesOn(dateStr,type).sort((a,b)=>Number(a.createdAt||0)-Number(b.createdAt||0));
+    return arr.length ? Number(arr[arr.length-1].amount||0) : null;
+  }
+
+  function hasStartEntry(dateStr,type){
+    return entries.some(e => e.active !== false && e.type===type && e.startDate===dateStr);
+  }
+
+  function hasDailyOverride(dateStr,field){
+    return dailyOverrides[dateStr] && Object.prototype.hasOwnProperty.call(dailyOverrides[dateStr],field);
+  }
+
+  function getDailyOverride(dateStr,field){
+    return hasDailyOverride(dateStr,field) ? Number(dailyOverrides[dateStr][field]||0) : null;
+  }
+
+  function computeThrough(endDate){
+    const result = {};
+    if(cmpDate(endDate,startDate) < 0) return result;
+
+    let date = startDate;
+    let previousClose = initialOpening;
+
+    let safety = 0;
+    while(cmpDate(date,endDate) <= 0 && safety < 10000){
+      const tonDirect = getDailyOverride(date,'ton');
+      const tonEntry = latestOverride(date,'ton');
+      const opening = tonDirect !== null ? tonDirect : (tonEntry !== null ? tonEntry : (date===startDate ? initialOpening : previousClose));
+
+      const scheduledThu = entrySum(date,'thu');
+      const scheduledChi = entrySum(date,'chi');
+
+      // Tách dữ liệu dự kiến theo chu kỳ và số thực tế nhập tay.
+      const thuActual = getDailyOverride(date,'thu');
+      const chiActual = getDailyOverride(date,'chi');
+
+      // Khi tính Dư: nếu đã nhập thực tế thì dùng thực tế; nếu chưa nhập thì dùng số theo chu kỳ.
+      const thu = thuActual !== null ? thuActual : scheduledThu;
+      const chi = chiActual !== null ? chiActual : scheduledChi;
+
+      const formulaClose = opening + thu - chi;
+      const duDirect = getDailyOverride(date,'du');
+      const duEntry = latestOverride(date,'du');
+      const close = duDirect !== null ? duDirect : (duEntry !== null ? duEntry : formulaClose);
+
+      result[date] = {
+        opening, thu, chi, close, formulaClose,
+        scheduledThu, scheduledChi,
+        thuCount: entriesOn(date,'thu').length,
+        chiCount: entriesOn(date,'chi').length,
+        tonOverride: tonDirect !== null ? tonDirect : tonEntry,
+        duOverride: duDirect !== null ? duDirect : duEntry,
+        tonDirect: tonDirect !== null,
+        duDirect: duDirect !== null,
+        thuActual,
+        chiActual,
+        thuManual: thuActual !== null,
+        chiManual: chiActual !== null
+      };
+      previousClose = close;
+      date = addDays(date,1);
+      safety++;
+    }
+    return result;
+  }
+
+  function weekDates(){
+    const start = getStartOfWeek(currentWeekOffset);
+    return Array.from({length:7},(_,i)=>addDays(start,i));
+  }
+
+  function dayName(dateStr){
+    const names=['CN','T2','T3','T4','T5','T6','T7'];
+    return names[parseDate(dateStr).getDay()];
+  }
+
+  function shortDate(dateStr){
+    const d=parseDate(dateStr);
+    return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+  }
+
+  function apiUrlForDate(dateStr){
+    return `${DAILY_BALANCE_API_BASE}/${dateStr}.json`;
+  }
+
+  function displayedApiClose(dateStr, fallback){
+    const row = apiBalances && apiBalances[dateStr];
+    if(row && Number.isFinite(Number(row.amount))) return Number(row.amount);
+    return fallback;
+  }
+
+  function maxDate(...dates){
+    return dates.filter(Boolean).sort().slice(-1)[0] || startDate;
+  }
+
+  function apiPublishEndDate(){
+    let end = maxDate(addDays(localDateISO(), 366), weekDates()[6]);
+    entries.forEach(e=>{
+      const x = Math.max(1, parseInt(e.x || 1,10));
+      if(e.cycle === 'once') end = maxDate(end, e.startDate);
+      else if(x > 1){
+        const last = getNthOccurrence(e, x-1);
+        if(last) end = maxDate(end,last);
+      }
+    });
+    Object.keys(dailyOverrides||{}).forEach(d=>{ end=maxDate(end,d); });
+    return end;
+  }
+
+  async function fetchDailyBalanceApi(){
+    try{
+      const res = await fetch(`${DAILY_BALANCE_API_BASE}.json`, {cache:'no-store'});
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+      apiBalances = await res.json() || {};
+      if($('apiReadStatus')) $('apiReadStatus').textContent = `• API đọc OK (${Object.keys(apiBalances).length} ngày)`;
+      preserveFocusRender(renderWeek);
+    }catch(err){
+      if($('apiReadStatus')) $('apiReadStatus').textContent = `• API đọc lỗi: ${err.message}`;
+      console.error('API dailyBalance read error:',err);
+    }
+  }
+
+  async function publishDailyBalanceApi(){
+    if(!db || apiPublishBusy || !dataReady.config || !dataReady.daily || !dataReady.entries) return;
+    apiPublishBusy = true;
+    try{
+      const end = apiPublishEndDate();
+      const computed = computeThrough(end);
+      const payload = {};
+      Object.entries(computed).forEach(([date,c])=>{
+        payload[date] = {
+          date,
+          amount: Math.round(Number(c.close)*1000)/1000,
+          unit: 'triệu đồng'
+        };
+      });
+      await db.ref('api/dailyBalance').set(payload);
+      await db.ref('api/meta').set({
+        updatedAt: firebase.database.ServerValue.TIMESTAMP,
+        startDate,
+        unit: 'triệu đồng'
+      });
+      if($('apiReadStatus')) $('apiReadStatus').textContent = `• API đã ghi (${Object.keys(payload).length} ngày), đang đọc lại...`;
+      await fetchDailyBalanceApi();
+    }catch(err){
+      console.error('Không cập nhật được API dailyBalance:',err);
+      if($('apiReadStatus')) $('apiReadStatus').textContent = `• API ghi lỗi: ${err.code||err.message}`;
+    }finally{
+      apiPublishBusy = false;
+    }
+  }
+
+  function scheduleApiRebuild(){
+    clearTimeout(apiRebuildTimer);
+    apiRebuildTimer = setTimeout(publishDailyBalanceApi, 450);
+  }
+
+  function renderWeek(){
+    const dates = weekDates();
+    const today = localDateISO();
+    const end = dates[6];
+    lastComputed = computeThrough(end);
+
+    $('weekLabel').textContent = `${shortDate(dates[0])} - ${shortDate(dates[6])}`;
+
+    let h1='<tr>', h2='<tr>';
+    dates.forEach(date=>{
+      const cls = date===today ? 'today' : (cmpDate(date,today)>0 ? 'future' : '');
+      const before = cmpDate(date,startDate)<0;
+      h1 += `<th colspan="4" class="day-head ${before?'before-start':cls}">${dayName(date)} ${shortDate(date)}${date===today?'<br><span style="font-size:8px">Hôm nay</span>':''}</th>`;
+      const future = cmpDate(date,today)>=0;
+      h2 += `<th class="metric-head ${future?'future':''}">Tồn đầu</th>`;
+      h2 += `<th class="metric-head ${future?'future':''}">${future?'Ước thu':'Thu'}</th>`;
+      h2 += `<th class="metric-head ${future?'future':''}">${future?'Ước chi':'Chi'}</th>`;
+      h2 += `<th class="metric-head ${future?'future':''}">Dư</th>`;
+    });
+    h1+='</tr>'; h2+='</tr>';
+    $('financeHead').innerHTML = h1+h2;
+
+    let row='<tr>';
+    dates.forEach(date=>{
+      const before = cmpDate(date,startDate)<0;
+      if(before){
+        for(let i=0;i<4;i++) row += `<td class="metric-cell before-start"><div class="before-text">Chưa<br>khởi động</div></td>`;
+        return;
+      }
+      const c = lastComputed[date];
+      const isToday = date===today;
+      const isFuture = cmpDate(date,today)>=0;
+      const baseCls = `${isToday?' today':''}${isFuture?' future':''}`;
+
+      row += `<td id="cell-ton-${date}" class="metric-cell locked${baseCls}${hasStartEntry(date,'ton')?' start-entry':''}"
+        title="${c.tonOverride!==null?'Ghi đè Tồn':'Tồn = Dư ngày liền trước'} • Đơn vị: triệu đồng">
+        <div class="value-big" id="val-ton-${date}">${fmt(c.opening)}</div>
+      </td>`;
+
+      row += `<td id="cell-thu-${date}" class="metric-cell${baseCls}${hasStartEntry(date,'thu')?' start-entry':''}"
+        title="${c.thuManual?'Đang dùng số Thu thực tế để tính Dư':'Đang dùng ước tính Thu theo chu kỳ để tính Dư'} • Đơn vị: triệu đồng">
+        <div class="entry-total" id="entry-thu-${date}" title="Tổng Thu theo tất cả khoản chu kỳ phát sinh ngày này">Tổng thu: ${fmt(c.scheduledThu)}</div>
+        <input id="input-thu-${date}" class="money-input ${c.thuManual?'manual':''}" type="text" inputmode="decimal"
+          value="${inputFmt(c.thuActual)}" placeholder="Thực tế"
+          ${cmpDate(date,today)>0?'disabled':''}
+          oninput="dailyInputChanged('${date}','thu',this.value,this)"
+          title="${cmpDate(date,today)>0?'Chưa cho nhập số thực tế của ngày tương lai • Đơn vị: triệu đồng':'Nhập/sửa Tổng Thu thực tế. Để trống sẽ dùng Tổng thu theo chu kỳ để tính Dư • Đơn vị: triệu đồng'}">
+      </td>`;
+
+      row += `<td id="cell-chi-${date}" class="metric-cell${baseCls}${hasStartEntry(date,'chi')?' start-entry':''}"
+        title="${c.chiManual?'Đang dùng số Chi thực tế để tính Dư':'Đang dùng ước tính Chi theo chu kỳ để tính Dư'} • Đơn vị: triệu đồng">
+        <div class="entry-total" id="entry-chi-${date}" title="Tổng Chi theo tất cả khoản chu kỳ phát sinh ngày này">Tổng chi: ${fmt(c.scheduledChi)}</div>
+        <input id="input-chi-${date}" class="money-input ${c.chiManual?'manual':''}" type="text" inputmode="decimal"
+          value="${inputFmt(c.chiActual)}" placeholder="Thực tế"
+          ${cmpDate(date,today)>0?'disabled':''}
+          oninput="dailyInputChanged('${date}','chi',this.value,this)"
+          title="${cmpDate(date,today)>0?'Chưa cho nhập số thực tế của ngày tương lai • Đơn vị: triệu đồng':'Nhập/sửa Tổng Chi thực tế. Để trống sẽ dùng Tổng chi theo chu kỳ để tính Dư • Đơn vị: triệu đồng'}">
+      </td>`;
+
+      row += `<td id="cell-du-${date}" class="metric-cell locked${baseCls}${hasStartEntry(date,'du')?' start-entry':''}"
+        title="${c.duOverride!==null?'Ghi đè Dư':'Dư = Tồn + Thu dùng tính - Chi dùng tính'} • Đơn vị: triệu đồng">
+        <div class="value-big" id="val-du-${date}">${fmt(displayedApiClose(date,c.close))}</div>
+      </td>`;
+    });
+    row+='</tr>';
+    $('financeBody').innerHTML = row;
+    updateSummary();
+  }
+
+  function refreshCalculatedValues(){
+    const dates = weekDates();
+    lastComputed = computeThrough(dates[6]);
+    dates.forEach(date=>{
+      if(cmpDate(date,startDate)<0 || !lastComputed[date]) return;
+      const c=lastComputed[date];
+      const ton=$(`val-ton-${date}`), du=$(`val-du-${date}`);
+      if(ton) ton.textContent=fmt(c.opening);
+      if(du) du.textContent=fmt(c.close);
+    });
+    updateSummary();
+  }
+
+  function updateSummary(){
+    const dates=weekDates().filter(d=>cmpDate(d,startDate)>=0 && lastComputed[d]);
+    if(!dates.length){
+      $('sumOpen').textContent='—'; $('sumIncome').textContent='—'; $('sumExpense').textContent='—'; $('sumClose').textContent='—';
+      return;
+    }
+    $('sumOpen').textContent=fmt(lastComputed[dates[0]].opening);
+    $('sumIncome').textContent=fmt(dates.reduce((s,d)=>s+lastComputed[d].thu,0));
+    $('sumExpense').textContent=fmt(dates.reduce((s,d)=>s+lastComputed[d].chi,0));
+    $('sumClose').textContent=fmt(displayedApiClose(dates[dates.length-1], lastComputed[dates[dates.length-1]].close));
+  }
+
+  function renderEntryList(){
+    const body=$('entryList');
+    const sorted=[...entries].sort((a,b)=>String(b.startDate||'').localeCompare(String(a.startDate||'')) || Number(b.createdAt||0)-Number(a.createdAt||0));
+    if(!sorted.length){
+      body.innerHTML='<tr><td colspan="7" class="muted">Chưa có khoản chu kỳ nào.</td></tr>';
+      return;
+    }
+    body.innerHTML=sorted.map(e=>`
+      <tr>
+        <td><span class="badge ${e.type}">${typeLabel(e.type)}</span></td>
+        <td><b>${fmt(e.amount)}</b> triệu</td>
+        <td>${e.startDate||''}</td>
+        <td>${cycleLabel(e.cycle)}</td>
+        <td>${e.cycle==='once'?'—':(e.x||1)}</td>
+        <td>${escapeHtml(e.note||'')}</td>
+        <td><button class="btn-danger" style="padding:3px 6px;font-size:9px" onclick="deleteEntry('${escapeJs(e.id)}')">Xóa</button></td>
+      </tr>`).join('');
+  }
+
+  function escapeHtml(s){
+    return String(s??'').replace(/[&<>"']/g,ch=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[ch]));
+  }
+  function escapeJs(s){ return String(s??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+
+  window.changeWeek = function(dir){
+    currentWeekOffset += dir;
+    renderWeek();
+  };
+
+  window.goCurrentWeek = function(){
+    currentWeekOffset=0;
+    renderWeek();
+  };
+
+  window.dailyInputChanged = function(date,field,value,el){
+    const n=parseMoney(value);
+    if(!dailyOverrides[date]) dailyOverrides[date]={};
+
+    if(String(value).trim()===''){
+      delete dailyOverrides[date][field];
+      if(!Object.keys(dailyOverrides[date]).length) delete dailyOverrides[date];
+      el.classList.remove('manual');
+    }else if(n!==null){
+      dailyOverrides[date][field]=n;
+      el.classList.add('manual');
+    }else{
+      return;
+    }
+
+    refreshCalculatedValues();
+
+    const key=date+'_'+field;
+    clearTimeout(saveTimers[key]);
+    saveTimers[key]=setTimeout(()=>saveDailyDate(date),350);
+  };
+
+  function saveDailyDate(date){
+    if(!db) return;
+    localWriteBusy++;
+    const ref=db.ref('dailyOverrides/'+date);
+    const payload=dailyOverrides[date]||null;
+    const p=payload ? ref.set(payload) : ref.remove();
+    p.then(()=>scheduleApiRebuild()).catch(err=>{
+      console.error('Không lưu được dailyOverrides:',err);
+      setStatus('Firebase kết nối nhưng ghi lỗi: '+(err.code||err.message),'bad');
+      alert('Không lưu được dữ liệu ngày '+date+': '+err.message);
+    }).finally(()=>{ localWriteBusy=Math.max(0,localWriteBusy-1); });
+  }
+
+  async function clearDailyOverrideAtStart(date,type){
+    if(!dailyOverrides[date] || !Object.prototype.hasOwnProperty.call(dailyOverrides[date],type)) return;
+    delete dailyOverrides[date][type];
+    if(!Object.keys(dailyOverrides[date]).length) delete dailyOverrides[date];
+    if(db){
+      const ref=db.ref('dailyOverrides/'+date+'/'+type);
+      try{ await ref.remove(); }catch(err){ console.error(err); }
+    }
+  }
+
+  window.addEntry = async function(){
+    const type=$('entryType').value;
+    const amount=parseMoney($('entryAmount').value);
+    const startDate=$('entryDate').value;
+    const cycle=$('entryCycle').value;
+    const x=Math.max(1,parseInt($('entryX').value||'1',10));
+    const note=$('entryNote').value.trim();
+
+    if(amount===null){ alert('Hãy nhập số tiền hợp lệ. Ví dụ: 1,5'); return; }
+    if(!startDate){ alert('Hãy chọn ngày bắt đầu.'); return; }
+    if(cmpDate(startDate,window.__financeStartDate || DEFAULT_START_DATE)<0){ alert('Ngày bắt đầu không được trước '+(window.__financeStartDate || DEFAULT_START_DATE)+'.'); return; }
+    if(!db){ alert('Firebase chưa khởi tạo.'); return; }
+
+    await clearDailyOverrideAtStart(startDate,type);
+
+    const ref=db.ref('financeEntries').push();
+    const payload={
+      type, amount, startDate, cycle,
+      x: cycle==='once' ? 1 : x,
+      note, active:true, createdAt:Date.now()
+    };
+
+    try{
+      await ref.set(payload);
+      $('entryAmount').value='';
+      $('entryNote').value='';
+      $('entryX').value='1';
+      $('entryDate').value=startDate;
+      scheduleApiRebuild();
+    }catch(err){
+      setStatus('Firebase kết nối nhưng ghi lỗi: '+(err.code||err.message),'bad');
+      alert('Không thêm được khoản: '+err.message);
+    }
+  };
+
+  window.deleteEntry = async function(id){
+    if(!confirm('Xóa khoản này khỏi chu kỳ?')) return;
+    try{
+      await db.ref('financeEntries/'+id).remove();
+      scheduleApiRebuild();
+    }catch(err){
+      alert('Không xóa được: '+err.message);
+    }
+  };
+
+  function preserveFocusRender(fn){
+    const active=document.activeElement;
+    const id=active && active.id;
+    let ss=null,se=null;
+    try{ ss=active.selectionStart; se=active.selectionEnd; }catch(_){}
+    fn();
+    if(id){
+      const el=$(id);
+      if(el){
+        el.focus();
+        try{ if(ss!==null) el.setSelectionRange(ss,se); }catch(_){}
+      }
+    }
+  }
+
+  function verifyWriteAccess(){
+    if(connectionWriteChecked || !db) return;
+    connectionWriteChecked=true;
+    const ref=db.ref('meta/connectionTest');
+    ref.set({
+      at: firebase.database.ServerValue.TIMESTAMP,
+      page:'taichinhgiadinh.html'
+    }).then(()=>{
+      setStatus('Đã kết nối Firebase • Ghi OK','ok');
+    }).catch(err=>{
+      connectionWriteChecked=false;
+      setStatus('Đã kết nối • Không ghi được ('+(err.code||'Rules')+')','bad');
+    });
+  }
+
+  function initFirebase(){
+    try{
+      firebase.initializeApp(firebaseConfig);
+      db=firebase.database();
+
+      const connectedRef=db.ref('.info/connected');
+      connectedRef.on('value',snap=>{
+        if(snap.val()===true){
+          connectionEverOk=true;
+          setStatus('Đã kết nối Firebase • đang kiểm tra quyền ghi','ok');
+          verifyWriteAccess();
+        }else{
+          if(connectionEverOk) setStatus('Mất kết nối Firebase','bad');
+          else setStatus('Đang kết nối Firebase...','warn');
+        }
+      },err=>{
+        setStatus('Lỗi trạng thái Firebase: '+err.message,'bad');
+      });
+
+      db.ref('config').on('value',snap=>{
+        const cfg = snap.val() || {};
+
+        // Migration bản cũ: nếu Firebase còn đúng ngày mặc định 04/09/2026
+        // thì tự đổi sang 01/09/2026 để kiểm thử sửa dữ liệu quá khứ.
+        const firebaseStartDate = cfg.startDate || DEFAULT_START_DATE;
+        const needsStartDateMigration = firebaseStartDate === PREVIOUS_DEFAULT_START_DATE;
+        startDate = needsStartDateMigration ? DEFAULT_START_DATE : firebaseStartDate;
+
+        initialOpening = Number.isFinite(Number(cfg.initialOpeningBalance)) ? Number(cfg.initialOpeningBalance) : DEFAULT_INITIAL_OPENING;
+        window.__financeStartDate = startDate;
+        if($('apiDateUrl')) $('apiDateUrl').textContent = apiUrlForDate(startDate);
+        dataReady.config = true;
+
+        if(!snap.exists()){
+          db.ref('config').set({
+            startDate: DEFAULT_START_DATE,
+            initialOpeningBalance: DEFAULT_INITIAL_OPENING,
+            createdAt: new Date().toISOString()
+          }).catch(console.error);
+        }else if(needsStartDateMigration){
+          db.ref('config/startDate').set(DEFAULT_START_DATE).catch(err=>{
+            console.error('Không migration được startDate:', err);
+          });
+        }
+        if($('entryDate') && cmpDate($('entryDate').value,startDate)<0) $('entryDate').value=startDate;
+        preserveFocusRender(renderWeek);
+        scheduleApiRebuild();
+      },err=>{
+        dataReady.config=true;
+        setStatus('Không đọc được config: '+(err.code||err.message),'bad');
+        console.error(err);
+      });
+
+      db.ref('dailyOverrides').on('value',snap=>{
+        dailyOverrides=snap.val()||{};
+        dataReady.daily=true;
+        preserveFocusRender(renderWeek);
+        scheduleApiRebuild();
+      },err=>{
+        dataReady.daily=true;
+        setStatus('Không đọc được dailyOverrides: '+(err.code||err.message),'bad');
+        console.error(err);
+      });
+
+      db.ref('financeEntries').on('value',snap=>{
+        const raw=snap.val()||{};
+        entries=Object.entries(raw).map(([id,v])=>({...(v||{}),id}));
+        dataReady.entries=true;
+        preserveFocusRender(()=>{ renderEntryList(); renderWeek(); });
+        scheduleApiRebuild();
+      },err=>{
+        dataReady.entries=true;
+        setStatus('Không đọc được financeEntries: '+(err.code||err.message),'bad');
+        console.error(err);
+      });
+
+      fetchDailyBalanceApi();
+
+      setTimeout(()=>{
+        const text=$('firebaseStatusText').textContent;
+        if(text.startsWith('Đang kết nối')){
+          setStatus('Chưa kết nối Firebase — kiểm tra Internet / databaseURL / Rules','bad');
+        }
+      },9000);
+
+    }catch(err){
+      console.error(err);
+      setStatus('Không khởi tạo được Firebase: '+err.message,'bad');
+    }
+  }
+
+  function init(){
+    $('entryDate').value=localDateISO();
+    if(cmpDate($('entryDate').value,startDate)<0) $('entryDate').value=startDate;
+    if($('apiAllUrl')) $('apiAllUrl').textContent = DAILY_BALANCE_API_BASE + '.json';
+    if($('apiDateUrl')) $('apiDateUrl').textContent = apiUrlForDate(startDate);
+    renderEntryList();
+    renderWeek();
+    initFirebase();
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
