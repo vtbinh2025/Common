@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tạo tổ hợp 5 số theo điều kiện</title>
+    <style>
+        * { box-sizing: border-box; font-family: Arial, sans-serif; }
+        body { background: #f0f2f5; padding: 20px; max-width: 1200px; margin: 0 auto; }
+        .container { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #1a3c5e; text-align: center; }
+        .row { display: flex; gap: 20px; flex-wrap: wrap; margin: 15px 0; }
+        .col { flex: 1; min-width: 250px; }
+        label { font-weight: bold; display: block; margin-bottom: 5px; }
+        textarea, input { width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px; }
+        textarea { height: 100px; resize: vertical; }
+        button { background: #1a73e8; color: white; border: none; padding: 12px 30px; border-radius: 6px; font-size: 16px; cursor: pointer; }
+        button:hover { background: #1557b0; }
+        .status { margin: 15px 0; padding: 10px; border-radius: 6px; background: #e8f0fe; color: #1a3c5e; }
+        .status.error { background: #fce8e6; color: #c62828; }
+        .result { max-height: 700px; overflow-y: auto; background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #ddd; }
+        .result .b { display: inline-block; background: white; padding: 4px 12px; margin: 3px; border-radius: 4px; border: 1px solid #ddd; font-size: 13px; }
+        .stats { display: flex; gap: 20px; flex-wrap: wrap; margin: 10px 0; }
+        .stats span { background: #e8f0fe; padding: 5px 15px; border-radius: 20px; font-size: 14px; }
+        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin: 10px 0; }
+        .btn-group button { flex: 1; min-width: 120px; }
+        .btn-group .btn-secondary { background: #5f6368; }
+        .btn-group .btn-secondary:hover { background: #3c4043; }
+        @media (max-width: 600px) { .row { flex-direction: column; } }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🧮 Tạo tổ hợp 5 số duy nhất</h1>
+    <p style="text-align:center;color:#555;">Nhập dãy số (cách nhau bằng dấu cách, dấu phẩy hoặc xuống dòng)</p>
+
+    <div class="row">
+        <div class="col">
+            <label>📥 Dãy số đầu vào:</label>
+            <textarea id="inputNumbers" placeholder="Ví dụ: 2 3 4 6 7 9 11 12 13 15 16 17 18 20 22 23 24 25 26 27 28 30 31 32 34">2 3 4 6 7 9 11 12 13 15 16 17 18 20 22 23 24 25 26 27 28 30 31 32 34</textarea>
+        </div>
+        <div class="col">
+            <label>🔢 Số lượng tổ hợp cần tạo:</label>
+            <input type="number" id="countNeeded" value="400" min="1" max="10000">
+            <div style="margin-top:15px;">
+                <label>⛔ Loại trừ:</label>
+                <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:5px;">
+                    <label style="font-weight:normal;"><input type="checkbox" id="chk3" checked> 3 số tăng sát</label>
+                    <label style="font-weight:normal;"><input type="checkbox" id="chk4" checked> 4 số tăng sát</label>
+                    <label style="font-weight:normal;"><input type="checkbox" id="chk5" checked> 5 số tăng sát</label>
+                    <label style="font-weight:normal;"><input type="checkbox" id="chkEven" checked> Toàn chẵn/lẻ</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="btn-group">
+        <button id="btnGenerate">⚡ Tạo tổ hợp</button>
+        <button id="btnExport" class="btn-secondary">📥 Xuất file .txt</button>
+        <button id="btnClear" class="btn-secondary">🗑️ Xóa kết quả</button>
+    </div>
+
+    <div id="status" class="status">👉 Nhấn "Tạo tổ hợp" để bắt đầu</div>
+
+    <div class="stats" id="stats" style="display:none;">
+        <span>📊 Số bộ đã tạo: <b id="countResult">0</b></span>
+        <span>📋 Tổng bộ hợp lệ tối đa: <b id="maxPossible">0</b></span>
+        <span>⏱️ Thời gian: <b id="timeTaken">0</b> ms</span>
+    </div>
+
+    <div id="result" class="result" style="display:none;"></div>
+</div>
+
+<script>
+(function() {
+    // ========== CORE LOGIC ==========
+    function combine(arr, k) {
+        if (k === 0) return [[]];
+        if (arr.length === 0) return [];
+        const [first, ...rest] = arr;
+        const withFirst = combine(rest, k - 1).map(c => [first, ...c]);
+        const withoutFirst = combine(rest, k);
+        return [...withFirst, ...withoutFirst];
+    }
+
+    function hasConsecutive(comb, len) {
+        for (let i = 0; i <= comb.length - len; i++) {
+            let ok = true;
+            for (let j = 0; j < len - 1; j++) {
+                if (comb[i + j + 1] !== comb[i + j] + 1) { ok = false; break; }
+            }
+            if (ok) return true;
+        }
+        return false;
+    }
+
+    function isAllEven(arr) { return arr.every(x => x % 2 === 0); }
+    function isAllOdd(arr) { return arr.every(x => x % 2 === 1); }
+
+    function isDateOfBirth(comb) {
+        // Kiểm tra có khớp dạng dd/mm/yyyy (ngày 1-31, tháng 1-12, năm 1900-2099)
+        // Vì số trong comb có thể > 31 nên chỉ kiểm tra nếu có đủ 5 số
+        if (comb.length < 5) return false;
+        // Lấy 5 số, thử tất cả hoán vị? Để đơn giản: kiểm tra nếu 2 số đầu là ngày (1-31), 2 số tiếp là tháng (1-12), số cuối là năm (>=1900)
+        // Nhưng dãy số của bạn đều >=2 nên năm không thể là 1900. Ta kiểm tra dạng ngày/tháng/năm với năm 4 chữ số.
+        // Vì số trong dãy <=34 nên năm chỉ có thể 20xx hoặc 19xx nhưng 19 >34 nên không có.
+        // Ta kiểm tra dạng: 2 số đầu là ngày (1-31), 2 số tiếp là tháng (1-12), số cuối là năm (>=2000)
+        // Với dãy số <=34, năm chỉ có thể là 20xx, nhưng 20xx cần 4 số -> không khớp.
+        // Nên bỏ qua kiểm tra này vì dãy số không đủ lớn.
+        return false;
+    }
+
+    function generateCombinations(numbers, countNeeded, options) {
+        const { ban3, ban4, ban5, banEvenOdd } = options;
+        const allCombos = combine(numbers, 5);
+        const result = [];
+        const usedTriples = new Set();
+
+        for (const comb of allCombos) {
+            // Loại trừ nhanh
+            if (ban5 && hasConsecutive(comb, 5)) continue;
+            if (ban4 && hasConsecutive(comb, 4)) continue;
+            if (ban3 && hasConsecutive(comb, 3)) continue;
+            if (banEvenOdd && (isAllEven(comb) || isAllOdd(comb))) continue;
+            if (isDateOfBirth(comb)) continue;
+
+            // Kiểm tra trùng tổ hợp 3 số
+            const triples = [];
+            for (let i = 0; i < comb.length - 2; i++) {
+                for (let j = i + 1; j < comb.length - 1; j++) {
+                    for (let k = j + 1; k < comb.length; k++) {
+                        const key = `${comb[i]},${comb[j]},${comb[k]}`;
+                        triples.push(key);
+                    }
+                }
+            }
+            let dup = false;
+            for (const key of triples) {
+                if (usedTriples.has(key)) { dup = true; break; }
+            }
+            if (dup) continue;
+
+            // Thêm vào kết quả
+            result.push(comb);
+            for (const key of triples) {
+                usedTriples.add(key);
+            }
+
+            if (result.length >= countNeeded) break;
+        }
+        return result;
+    }
+
+    // ========== UI ==========
+    const inputEl = document.getElementById('inputNumbers');
+    const countEl = document.getElementById('countNeeded');
+    const chk3 = document.getElementById('chk3');
+    const chk4 = document.getElementById('chk4');
+    const chk5 = document.getElementById('chk5');
+    const chkEven = document.getElementById('chkEven');
+    const btnGen = document.getElementById('btnGenerate');
+    const btnExport = document.getElementById('btnExport');
+    const btnClear = document.getElementById('btnClear');
+    const statusEl = document.getElementById('status');
+    const statsEl = document.getElementById('stats');
+    const countResult = document.getElementById('countResult');
+    const maxPossible = document.getElementById('maxPossible');
+    const timeTaken = document.getElementById('timeTaken');
+    const resultEl = document.getElementById('result');
+
+    let lastResult = [];
+
+    function parseNumbers(text) {
+        const tokens = text.split(/[\s,;\n\r]+/).filter(s => s.trim() !== '');
+        return tokens.map(Number).filter(n => !isNaN(n) && n > 0);
+    }
+
+    function formatComb(comb) {
+        return comb.join(' ');
+    }
+
+    function renderResult(combos) {
+        if (combos.length === 0) {
+            resultEl.style.display = 'none';
+            return;
+        }
+        resultEl.style.display = 'block';
+        resultEl.innerHTML = combos.map(c => `<span class="b">${formatComb(c)}</span>`).join('');
+    }
+
+    function runGenerate() {
+        const raw = inputEl.value;
+        const nums = parseNumbers(raw);
+        if (nums.length < 5) {
+            statusEl.className = 'status error';
+            statusEl.textContent = '❌ Cần ít nhất 5 số hợp lệ!';
+            return;
+        }
+        const count = parseInt(countEl.value) || 400;
+        if (count < 1) {
+            statusEl.className = 'status error';
+            statusEl.textContent = '❌ Số lượng phải >= 1';
+            return;
+        }
+
+        const options = {
+            ban3: chk3.checked,
+            ban4: chk4.checked,
+            ban5: chk5.checked,
+            banEvenOdd: chkEven.checked,
+        };
+
+        statusEl.className = 'status';
+        statusEl.textContent = '⏳ Đang tạo tổ hợp...';
+
+        const start = performance.now();
+        // Ước tính tối đa
+        const allCombos = combine(nums, 5);
+        const maxPossibleVal = allCombos.length;
+
+        // Chạy sinh
+        const result = generateCombinations(nums, count, options);
+        const end = performance.now();
+        lastResult = result;
+
+        // Hiển thị
+        statsEl.style.display = 'flex';
+        countResult.textContent = result.length;
+        maxPossible.textContent = maxPossibleVal;
+        timeTaken.textContent = Math.round(end - start);
+
+        renderResult(result);
+
+        if (result.length === 0) {
+            statusEl.className = 'status error';
+            statusEl.textContent = `❌ Không tìm thấy bộ nào! Tổng số bộ có thể: ${maxPossibleVal}. Thử nới lỏng điều kiện.`;
+        } else if (result.length < count) {
+            statusEl.className = 'status';
+            statusEl.textContent = `⚠️ Chỉ tạo được ${result.length}/${count} bộ. Đã đạt giới hạn tối đa với điều kiện hiện tại.`;
+        } else {
+            statusEl.className = 'status';
+            statusEl.textContent = `✅ Thành công! Đã tạo ${result.length} bộ.`;
+        }
+    }
+
+    function exportTxt() {
+        if (lastResult.length === 0) {
+            alert('Chưa có kết quả để xuất!');
+            return;
+        }
+        const lines = lastResult.map(c => c.join(' '));
+        const content = lines.join('\n');
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `combinations_${lastResult.length}.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    // Events
+    btnGen.addEventListener('click', runGenerate);
+    btnExport.addEventListener('click', exportTxt);
+    btnClear.addEventListener('click', () => {
+        lastResult = [];
+        resultEl.style.display = 'none';
+        statsEl.style.display = 'none';
+        statusEl.className = 'status';
+        statusEl.textContent = '🗑️ Đã xóa kết quả.';
+    });
+
+    // Mặc định chạy thử
+    setTimeout(runGenerate, 100);
+})();
+</script>
+</body>
+</html>
