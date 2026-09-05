@@ -62,7 +62,7 @@
   .value-big{font-size:12px;font-weight:800;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .value-formula{font-size:8px;color:#667085;line-height:1.1;margin-top:2px}
   .entry-total{
-    min-height:12px;font-size:8px;color:#7a5300;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    min-height:12px;font-size:10px;color:#7a5300;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
     margin-bottom:2px
   }
   .money-input{
@@ -71,7 +71,6 @@
   }
   .money-input:focus{border-color:#0d6efd;box-shadow:0 0 0 1px rgba(13,110,253,.2)}
   .money-input.manual{border-color:#f0ad4e;background:#fff8e8}
-  .money-input:disabled{background:#eef1f4;color:#8a939b;border-color:#d5d9dd;cursor:not-allowed}
   .unit{font-size:7px;color:#7d8790;margin-top:2px}
   .before-text{font-size:9px;color:#888;line-height:1.2}
   .panel{
@@ -83,6 +82,12 @@
     margin-bottom:6px;min-width:0;white-space:nowrap
   }
   .panel-head h2{margin:0;flex:0 0 auto}
+  .view-all-inline{
+    display:inline-flex;align-items:center;gap:3px;flex:0 0 auto;
+    font-size:9px;font-weight:700;color:#495057;cursor:pointer;white-space:nowrap
+  }
+  .view-all-inline input{width:12px;height:12px;margin:0;cursor:pointer}
+  table.entries th .view-all-inline{justify-content:center;width:100%;color:#495057}
   .api-inline{
     display:flex;align-items:center;justify-content:flex-end;gap:5px;
     min-width:0;flex:1 1 auto;font-size:9px;color:#6c757d;white-space:nowrap;overflow:hidden
@@ -108,6 +113,11 @@
   table.entries{width:100%;border-collapse:collapse;font-size:10px}
   table.entries th, table.entries td{border-bottom:1px solid var(--line);padding:4px 5px;text-align:left}
   table.entries th{position:sticky;top:0;background:#f8f9fa;z-index:1}
+  table.entries tr.entry-hidden td{background:#f3f4f6;color:#7a838c}
+  .action-cell{white-space:nowrap;width:118px}
+  .btn-hide{background:#6c757d;color:white}
+  .btn-show{background:#198754;color:white}
+  .hidden-flag{font-size:8px;font-weight:700;color:#6c757d;margin-left:4px}
   .badge{display:inline-block;border-radius:999px;padding:2px 5px;font-size:9px;font-weight:700;background:#e9ecef}
   .badge.thu{background:#d1e7dd;color:#0f5132}
   .badge.chi{background:#f8d7da;color:#842029}
@@ -205,7 +215,7 @@
         <input id="entryX" type="number" min="1" step="1" value="1">
       </div>
       <div class="field">
-        <label>Ghi chú</label>
+        <label>Công việc liên quan tài chính/Ghi chú</label>
         <input id="entryNote" type="text" maxlength="120" placeholder="Ví dụ: Lương, điện, học phí...">
       </div>
       <button class="btn-primary" onclick="addEntry()">+ Thêm</button>
@@ -213,13 +223,17 @@
     <div class="hint">
       Quy ước X: <b>X = 1</b> nghĩa là chu kỳ lặp không giới hạn; <b>X &gt; 1</b> thì chỉ phát sinh đúng X lần rồi ngưng.
       Riêng “1 lần” chỉ phát sinh ở ngày bắt đầu. Khoản được thêm sẽ <b>ghi đè logic tại ngày bắt đầu</b> và ô ngày đầu được
-      <span class="yellow-note">tô vàng</span>. Với Thu/Chi, dòng trên luôn là tổng theo chu kỳ; dòng dưới là số thực tế nhập tay. Nếu cùng ngày có nhiều khoản, dòng trên tự cộng tổng. Khi có số thực tế, Dư dùng số thực tế; nếu để trống, Dư dùng số theo chu kỳ.
+      <span class="yellow-note">tô vàng</span>. Với Thu/Chi, dòng trên luôn là tổng theo chu kỳ; dòng dưới là số thực tế nhập tay. Nếu cùng ngày có nhiều khoản, dòng trên tự cộng tổng. Khi có số thực tế, Dư dùng số thực tế; nếu để trống, Dư dùng số theo chu kỳ. <b>Ẩn</b> chỉ ẩn khỏi danh sách, không ngừng chu kỳ và không thay đổi phép tính; check <b>ViewAll</b> để xem lại.
     </div>
 
     <div class="list-wrap">
       <table class="entries">
         <thead>
-          <tr><th>Loại</th><th>Số tiền</th><th>Ngày bắt đầu</th><th>Chu kỳ</th><th>X</th><th>Ghi chú</th><th></th></tr>
+          <tr><th>Loại</th><th>Số tiền</th><th>Ngày bắt đầu</th><th>Chu kỳ</th><th>X</th><th>Công việc liên quan tài chính/Ghi chú</th><th class="action-cell">
+            <label class="view-all-inline" title="Check để xem lại tất cả khoản đã ẩn">
+              <input id="viewAllEntries" type="checkbox" onchange="toggleViewAllEntries(this.checked)"> ViewAll
+            </label>
+          </th></tr>
         </thead>
         <tbody id="entryList"></tbody>
       </table>
@@ -263,6 +277,7 @@
   let saveTimers = {};
   let lastComputed = {};
   let localWriteBusy = 0;
+  let showHiddenEntries = false;
   let apiRebuildTimer = null;
   let apiPublishBusy = false;
 
@@ -584,22 +599,20 @@
 
       row += `<td id="cell-thu-${date}" class="metric-cell${baseCls}${hasStartEntry(date,'thu')?' start-entry':''}"
         title="${c.thuManual?'Đang dùng số Thu thực tế để tính Dư':'Đang dùng ước tính Thu theo chu kỳ để tính Dư'} • Đơn vị: triệu đồng">
-        <div class="entry-total" id="entry-thu-${date}" title="Tổng Thu theo tất cả khoản chu kỳ phát sinh ngày này">Tổng thu: ${fmt(c.scheduledThu)}</div>
+        <div class="entry-total" id="entry-thu-${date}" title="Tổng Thu theo tất cả khoản chu kỳ phát sinh ngày này">${fmt(c.scheduledThu)}</div>
         <input id="input-thu-${date}" class="money-input ${c.thuManual?'manual':''}" type="text" inputmode="decimal"
-          value="${inputFmt(c.thuActual)}" placeholder="Thực tế"
-          ${cmpDate(date,today)>0?'disabled':''}
+          value="${inputFmt(c.thuActual)}" placeholder="${cmpDate(date,today)>0?'Nhập trước':'Thực tế'}"
           oninput="dailyInputChanged('${date}','thu',this.value,this)"
-          title="${cmpDate(date,today)>0?'Chưa cho nhập số thực tế của ngày tương lai • Đơn vị: triệu đồng':'Nhập/sửa Tổng Thu thực tế. Để trống sẽ dùng Tổng thu theo chu kỳ để tính Dư • Đơn vị: triệu đồng'}">
+          title="${cmpDate(date,today)>0?'Có thể nhập Thu cho ngày tương lai. Nếu để trống sẽ dùng Thu theo chu kỳ để tính Dư • Đơn vị: triệu đồng':'Nhập/sửa Tổng Thu thực tế. Để trống sẽ dùng Thu theo chu kỳ để tính Dư • Đơn vị: triệu đồng'}">
       </td>`;
 
       row += `<td id="cell-chi-${date}" class="metric-cell${baseCls}${hasStartEntry(date,'chi')?' start-entry':''}"
         title="${c.chiManual?'Đang dùng số Chi thực tế để tính Dư':'Đang dùng ước tính Chi theo chu kỳ để tính Dư'} • Đơn vị: triệu đồng">
-        <div class="entry-total" id="entry-chi-${date}" title="Tổng Chi theo tất cả khoản chu kỳ phát sinh ngày này">Tổng chi: ${fmt(c.scheduledChi)}</div>
+        <div class="entry-total" id="entry-chi-${date}" title="Tổng Chi theo tất cả khoản chu kỳ phát sinh ngày này">${fmt(c.scheduledChi)}</div>
         <input id="input-chi-${date}" class="money-input ${c.chiManual?'manual':''}" type="text" inputmode="decimal"
-          value="${inputFmt(c.chiActual)}" placeholder="Thực tế"
-          ${cmpDate(date,today)>0?'disabled':''}
+          value="${inputFmt(c.chiActual)}" placeholder="${cmpDate(date,today)>0?'Nhập trước':'Thực tế'}"
           oninput="dailyInputChanged('${date}','chi',this.value,this)"
-          title="${cmpDate(date,today)>0?'Chưa cho nhập số thực tế của ngày tương lai • Đơn vị: triệu đồng':'Nhập/sửa Tổng Chi thực tế. Để trống sẽ dùng Tổng chi theo chu kỳ để tính Dư • Đơn vị: triệu đồng'}">
+          title="${cmpDate(date,today)>0?'Có thể nhập Chi cho ngày tương lai. Nếu để trống sẽ dùng Chi theo chu kỳ để tính Dư • Đơn vị: triệu đồng':'Nhập/sửa Tổng Chi thực tế. Để trống sẽ dùng Chi theo chu kỳ để tính Dư • Đơn vị: triệu đồng'}">
       </td>`;
 
       row += `<td id="cell-du-${date}" class="metric-cell locked${baseCls}${hasStartEntry(date,'du')?' start-entry':''}"
@@ -640,19 +653,34 @@
   function renderEntryList(){
     const body=$('entryList');
     const sorted=[...entries].sort((a,b)=>String(b.startDate||'').localeCompare(String(a.startDate||'')) || Number(b.createdAt||0)-Number(a.createdAt||0));
+    const visible = showHiddenEntries ? sorted : sorted.filter(e => e.hidden !== true);
+
+    const viewAll=$('viewAllEntries');
+    if(viewAll) viewAll.checked=showHiddenEntries;
+
     if(!sorted.length){
       body.innerHTML='<tr><td colspan="7" class="muted">Chưa có khoản chu kỳ nào.</td></tr>';
       return;
     }
-    body.innerHTML=sorted.map(e=>`
-      <tr>
-        <td><span class="badge ${e.type}">${typeLabel(e.type)}</span></td>
+    if(!visible.length){
+      body.innerHTML='<tr><td colspan="7" class="muted">Không có khoản đang hiển thị. Check ViewAll để xem lại các khoản đã ẩn.</td></tr>';
+      return;
+    }
+
+    body.innerHTML=visible.map(e=>`
+      <tr class="${e.hidden===true?'entry-hidden':''}">
+        <td><span class="badge ${e.type}">${typeLabel(e.type)}</span>${e.hidden===true?'<span class="hidden-flag">ẨN</span>':''}</td>
         <td><b>${fmt(e.amount)}</b> triệu</td>
         <td>${e.startDate||''}</td>
         <td>${cycleLabel(e.cycle)}</td>
         <td>${e.cycle==='once'?'—':(e.x||1)}</td>
         <td>${escapeHtml(e.note||'')}</td>
-        <td><button class="btn-danger" style="padding:3px 6px;font-size:9px" onclick="deleteEntry('${escapeJs(e.id)}')">Xóa</button></td>
+        <td class="action-cell">
+          ${e.hidden===true
+            ? `<button class="btn-show" style="padding:3px 6px;font-size:9px" onclick="showEntry('${escapeJs(e.id)}')">Hiện</button>`
+            : `<button class="btn-hide" style="padding:3px 6px;font-size:9px" onclick="hideEntry('${escapeJs(e.id)}')">Ẩn</button>`}
+          <button class="btn-danger" style="padding:3px 6px;font-size:9px;margin-left:3px" onclick="deleteEntry('${escapeJs(e.id)}')">Xóa</button>
+        </td>
       </tr>`).join('');
   }
 
@@ -660,6 +688,35 @@
     return String(s??'').replace(/[&<>"']/g,ch=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[ch]));
   }
   function escapeJs(s){ return String(s??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+
+  window.toggleViewAllEntries = function(checked){
+    showHiddenEntries = Boolean(checked);
+    renderEntryList();
+  };
+
+  window.hideEntry = async function(id){
+    if(!db) return;
+    try{
+      await db.ref('financeEntries/'+id).update({
+        hidden:true,
+        hiddenAt:Date.now()
+      });
+    }catch(err){
+      alert('Không ẩn được khoản: '+err.message);
+    }
+  };
+
+  window.showEntry = async function(id){
+    if(!db) return;
+    try{
+      await db.ref('financeEntries/'+id).update({
+        hidden:false,
+        hiddenAt:null
+      });
+    }catch(err){
+      alert('Không hiện lại được khoản: '+err.message);
+    }
+  };
 
   window.changeWeek = function(dir){
     currentWeekOffset += dir;
@@ -735,7 +792,7 @@
     const payload={
       type, amount, startDate, cycle,
       x: cycle==='once' ? 1 : x,
-      note, active:true, createdAt:Date.now()
+      note, active:true, hidden:false, createdAt:Date.now()
     };
 
     try{
@@ -752,7 +809,24 @@
   };
 
   window.deleteEntry = async function(id){
-    if(!confirm('Xóa khoản này khỏi chu kỳ?')) return;
+    const e = entries.find(x => String(x.id) === String(id));
+    if(!e){
+      alert('Không tìm thấy khoản cần xóa.');
+      return;
+    }
+
+    const warning =
+      'CẢNH BÁO XÓA VĨNH VIỄN\n\n' +
+      'Khoản: ' + typeLabel(e.type) + ' ' + fmt(e.amount) + ' triệu\n' +
+      'Ngày bắt đầu: ' + (e.startDate || 'không xác định') + '\n' +
+      'Chu kỳ: ' + cycleLabel(e.cycle) + '\n\n' +
+      'Xóa khoản này có thể làm thay đổi Thu/Chi/Tồn/Dư và API số dư từ ngày bắt đầu trở về sau.\n\n' +
+      'Nếu đây là khoản Thu/Chi đã thực sự phát sinh, nên chốt số Thực thu/Thực chi tại từng thời điểm cần giữ lại trước khi xóa.\n' +
+      'Nếu chỉ muốn dọn gọn màn hình mà vẫn giữ khoản trong tính toán, hãy dùng nút Ẩn thay vì Xóa.\n\n' +
+      'Bạn chắc chắn muốn xóa?';
+
+    if(!confirm(warning)) return;
+
     try{
       await db.ref('financeEntries/'+id).remove();
       scheduleApiRebuild();
