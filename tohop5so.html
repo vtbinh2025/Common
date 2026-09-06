@@ -1,1114 +1,1923 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tạo tổ hợp 5 số theo điều kiện</title>
-    <style>
-        * { box-sizing: border-box; font-family: Arial, sans-serif; }
-        body { background: #f0f2f5; padding: 20px; max-width: 1200px; margin: 0 auto; }
-        .container { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h1 { color: #1a3c5e; text-align: center; }
-        .row { display: flex; gap: 20px; flex-wrap: wrap; margin: 15px 0; }
-        .col { flex: 1; min-width: 250px; }
-        label { font-weight: bold; display: block; margin-bottom: 5px; }
-        textarea, input { width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px; }
-        textarea { height: 100px; resize: vertical; }
-        button { background: #1a73e8; color: white; border: none; padding: 12px 30px; border-radius: 6px; font-size: 16px; cursor: pointer; }
-        button:hover { background: #1557b0; }
-        .status { margin: 15px 0; padding: 10px; border-radius: 6px; background: #e8f0fe; color: #1a3c5e; }
-        .status.error { background: #fce8e6; color: #c62828; }
-        .result { max-height: 700px; overflow-y: auto; background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #ddd; }
-        .result .b { display: inline-block; background: white; padding: 4px 12px; margin: 3px; border-radius: 4px; border: 1px solid #ddd; font-size: 13px; }
-        .stats { display: flex; gap: 20px; flex-wrap: wrap; margin: 10px 0; }
-        .stats span { background: #e8f0fe; padding: 5px 15px; border-radius: 20px; font-size: 14px; }
-        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin: 10px 0; }
-        .btn-group button { flex: 1; min-width: 120px; }
-        .btn-group .btn-secondary { background: #5f6368; }
-        .btn-group .btn-secondary:hover { background: #3c4043; }
-        .note {
-            background: #fff8e1;
-            border: 1px solid #f2d675;
-            padding: 10px 12px;
-            border-radius: 6px;
-            color: #5f4b00;
-            font-size: 13px;
-            margin: 10px 0;
-        }
-        @media (max-width: 600px) {
-            .row { flex-direction: column; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tạo tổ hợp 5 số - học từ lịch sử</title>
+
+<style>
+*{
+    box-sizing:border-box;
+    font-family:Arial,sans-serif
+}
+
+body{
+    background:#f0f2f5;
+    padding:20px;
+    max-width:1280px;
+    margin:auto
+}
+
+.container{
+    background:#fff;
+    padding:24px;
+    border-radius:12px;
+    box-shadow:0 2px 10px rgba(0,0,0,.08)
+}
+
+h1{
+    color:#1a3c5e;
+    text-align:center;
+    margin-top:0
+}
+
+.row{
+    display:flex;
+    gap:18px;
+    flex-wrap:wrap;
+    margin:14px 0
+}
+
+.col{
+    flex:1;
+    min-width:280px
+}
+
+label{
+    font-weight:bold;
+    display:block;
+    margin-bottom:6px
+}
+
+textarea,input{
+    width:100%;
+    padding:10px;
+    border:2px solid #ddd;
+    border-radius:6px;
+    font-size:14px
+}
+
+textarea{
+    resize:vertical
+}
+
+#inputNumbers{
+    height:95px
+}
+
+#historyInput{
+    height:260px
+}
+
+#targetInput{
+    height:42px
+}
+
+button{
+    background:#1a73e8;
+    color:#fff;
+    border:none;
+    padding:11px 20px;
+    border-radius:6px;
+    font-size:15px;
+    cursor:pointer
+}
+
+button:hover{
+    background:#1557b0
+}
+
+.btn-secondary{
+    background:#5f6368
+}
+
+.btn-secondary:hover{
+    background:#3c4043
+}
+
+.btn-group{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin:12px 0
+}
+
+.status{
+    margin:14px 0;
+    padding:10px;
+    border-radius:6px;
+    background:#e8f0fe;
+    color:#1a3c5e
+}
+
+.status.error{
+    background:#fce8e6;
+    color:#c62828
+}
+
+.note{
+    background:#fff8e1;
+    border:1px solid #f0d675;
+    padding:10px 12px;
+    border-radius:6px;
+    font-size:13px;
+    color:#5f4b00
+}
+
+.stats{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin:10px 0
+}
+
+.stats span{
+    background:#e8f0fe;
+    padding:6px 12px;
+    border-radius:20px;
+    font-size:13px
+}
+
+.result{
+    max-height:650px;
+    overflow-y:auto;
+    background:#f8f9fa;
+    padding:12px;
+    border:1px solid #ddd;
+    border-radius:6px
+}
+
+.b{
+    display:inline-block;
+    background:#fff;
+    padding:5px 10px;
+    margin:3px;
+    border:1px solid #ddd;
+    border-radius:4px;
+    font-size:13px
+}
+
+.b.target{
+    border:2px solid #d93025;
+    font-weight:bold;
+    background:#fff3f2
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:10px;
+    font-size:13px
+}
+
+th,td{
+    border:1px solid #ddd;
+    padding:7px;
+    text-align:left
+}
+
+th{
+    background:#f1f3f4
+}
+
+.small{
+    font-size:12px;
+    color:#666
+}
+
+@media(max-width:700px){
+    .row{
+        flex-direction:column
+    }
+}
+</style>
 </head>
 
 <body>
 
 <div class="container">
 
-    <h1>🧮 Tạo tổ hợp 5 số duy nhất</h1>
+<h1>🧮 Tạo tổ hợp 5 số - học từ dữ liệu lịch sử</h1>
 
-    <p style="text-align:center;color:#555;">
-        Nhập dãy số (cách nhau bằng dấu cách, dấu phẩy hoặc xuống dòng)
-    </p>
+<div class="row">
 
-    <div class="row">
+    <div class="col">
 
-        <div class="col">
+        <label>📥 Dãy số đầu vào:</label>
 
-            <label>📥 Dãy số đầu vào:</label>
+        <textarea id="inputNumbers">2 3 4 6 7 9 11 12 13 15 16 17 18 20 22 23 24 25 26 27 28 30 31 32 34</textarea>
 
-            <textarea
-                id="inputNumbers"
-                placeholder="Ví dụ: 2 3 4 6 7 9 11 12 13 15 16 17 18 20 22 23 24 25 26 27 28 30 31 32 34"
-            >2 3 4 6 7 9 11 12 13 15 16 17 18 20 22 23 24 25 26 27 28 30 31 32 34</textarea>
+    </div>
 
-        </div>
+    <div class="col">
 
-        <div class="col">
+        <label>🔢 Số lượng cần tạo:</label>
 
-            <label>🔢 Số lượng tổ hợp cần tạo:</label>
+        <input
+            type="number"
+            id="countNeeded"
+            value="400"
+            min="1"
+            max="10000"
+        >
+
+        <div style="margin-top:12px">
+
+            <label>🎯 Bộ cần theo dõi/backtest:</label>
 
             <input
-                type="number"
-                id="countNeeded"
-                value="400"
-                min="1"
-                max="10000"
+                id="targetInput"
+                value="9 15 20 22 26"
             >
 
-            <div style="margin-top:15px;">
+        </div>
 
-                <label>⛔ Loại trừ:</label>
+        <div style="margin-top:12px">
 
-                <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:5px;">
+            <label>⛔ Loại trừ cơ bản:</label>
 
-                    <label style="font-weight:normal;">
-                        <input type="checkbox" id="chk3" checked>
-                        3 số tăng sát
-                    </label>
+            <label style="font-weight:normal">
+                <input
+                    type="checkbox"
+                    id="chk3"
+                    checked
+                >
+                3 số tăng sát
+            </label>
 
-                    <label style="font-weight:normal;">
-                        <input type="checkbox" id="chk4" checked>
-                        4 số tăng sát
-                    </label>
+            <label style="font-weight:normal">
+                <input
+                    type="checkbox"
+                    id="chk4"
+                    checked
+                >
+                4 số tăng sát
+            </label>
 
-                    <label style="font-weight:normal;">
-                        <input type="checkbox" id="chk5" checked>
-                        5 số tăng sát
-                    </label>
+            <label style="font-weight:normal">
+                <input
+                    type="checkbox"
+                    id="chk5"
+                    checked
+                >
+                5 số tăng sát
+            </label>
 
-                    <label style="font-weight:normal;">
-                        <input type="checkbox" id="chkEven" checked>
-                        Toàn chẵn/lẻ
-                    </label>
-
-                </div>
-
-            </div>
+            <label style="font-weight:normal">
+                <input
+                    type="checkbox"
+                    id="chkEven"
+                    checked
+                >
+                Toàn chẵn/lẻ
+            </label>
 
         </div>
 
     </div>
 
-    <div class="note">
+</div>
 
-        Quy tắc chống trùng V2:
-        <b>cho phép các tổ hợp khác nhau dùng lại cùng bộ 3 số</b>.
 
-        Chỉ loại một tổ hợp mới khi nó có
-        <b>4 số giống với một tổ hợp đã chọn trước đó</b>.
+<div class="row">
+
+    <div class="col">
+
+        <label>
+            📚 Dữ liệu lịch sử
+            (mỗi dòng 5 số thường, KHÔNG nhập kỳ mục tiêu):
+        </label>
+
+        <textarea id="historyInput">3 11 12 18 35
+13 16 20 23 25
+2 13 19 22 31
+7 17 23 24 27
+2 15 23 24 30
+7 11 18 26 29
+6 7 9 11 32
+3 4 6 15 22
+9 18 20 27 34
+1 5 25 27 28
+4 11 13 18 27
+13 15 17 26 30
+2 4 12 21 28
+6 7 12 18 20
+2 26 27 32 34
+11 17 28 29 34
+12 17 18 21 28
+9 10 21 33 34
+1 3 8 11 33
+3 19 20 25 35
+3 10 12 26 30
+8 9 13 15 16
+13 14 16 20 31</textarea>
+
+        <div class="small">
+            Mỗi dòng chỉ cần 5 số kết quả thường.
+            Dữ liệu được dùng để chấm điểm và loại bộ 4
+            đã từng xuất hiện.
+        </div>
 
     </div>
 
-    <div class="btn-group">
+</div>
 
-        <button id="btnGenerate">
-            ⚡ Tạo tổ hợp
-        </button>
 
-        <button
-            id="btnExport"
-            class="btn-secondary"
-        >
-            📥 Xuất file .txt
-        </button>
+<div class="note">
 
-        <button
-            id="btnClear"
-            class="btn-secondary"
-        >
-            🗑️ Xóa kết quả
-        </button>
+Quy tắc V3:
 
-    </div>
+trước tiên loại các ứng viên chứa
+<b>bộ 4 số đã từng xuất hiện trong lịch sử</b>.
 
-    <div
-        id="status"
-        class="status"
+Sau đó chấm điểm theo tần suất số,
+cặp số, độ mới của bộ 4 và độ giãn khoảng cách.
+
+Cuối cùng mới chọn 400 bộ với quy tắc
+<b>không để hai bộ được chọn trùng 4/5 số</b>.
+
+</div>
+
+
+<div class="btn-group">
+
+    <button id="btnGenerate">
+        ⚡ Tạo & xếp hạng
+    </button>
+
+    <button
+        id="btnExport"
+        class="btn-secondary"
     >
-        👉 Nhấn "Tạo tổ hợp" để bắt đầu
-    </div>
+        📥 Xuất file .txt
+    </button>
 
-    <div
-        class="stats"
-        id="stats"
-        style="display:none;"
+    <button
+        id="btnClear"
+        class="btn-secondary"
     >
+        🗑️ Xóa kết quả
+    </button>
 
-        <span>
-            📊 Số bộ đã tạo:
-            <b id="countResult">0</b>
-        </span>
+</div>
 
-        <span>
-            📋 Tổng bộ hợp lệ cơ bản:
-            <b id="maxPossible">0</b>
-        </span>
 
-        <span>
-            ⏱️ Thời gian:
-            <b id="timeTaken">0</b> ms
-        </span>
+<div
+    id="status"
+    class="status"
+>
+    👉 Nhấn "Tạo & xếp hạng"
+</div>
 
-    </div>
 
-    <div
-        id="result"
-        class="result"
-        style="display:none;"
-    ></div>
+<div
+    class="stats"
+    id="stats"
+    style="display:none"
+>
+
+    <span>
+        📊 Đã chọn:
+        <b id="countResult">0</b>
+    </span>
+
+    <span>
+        📋 Ứng viên qua lọc cơ bản:
+        <b id="basicCount">0</b>
+    </span>
+
+    <span>
+        🧹 Còn lại sau lọc lịch sử:
+        <b id="historyCount">0</b>
+    </span>
+
+    <span>
+        🎯 Hạng mục tiêu trước chọn:
+        <b id="targetRank">—</b>
+    </span>
+
+    <span>
+        🎯 Có trong 400:
+        <b id="targetIn400">—</b>
+    </span>
+
+    <span>
+        ⏱️
+        <b id="timeTaken">0</b>
+        ms
+    </span>
+
+</div>
+
+
+<div id="targetInfo"></div>
+
+
+<div
+    id="result"
+    class="result"
+    style="display:none"
+></div>
 
 </div>
 
 
 <script>
 
-(function() {
+(function(){
 
-    // ============================================================
-    // CORE LOGIC
-    // ============================================================
+// =====================================================
+// TẠO TỔ HỢP C(n,k)
+// =====================================================
 
-    function combine(arr, k) {
+function combine(arr,k){
 
-        if (k === 0)
-            return [[]];
+    if(k===0)
+        return [[]];
 
-        if (arr.length === 0)
-            return [];
+    if(arr.length===0)
+        return [];
 
-        const [first, ...rest] = arr;
+    const [first,...rest]=arr;
 
-        const withFirst =
-            combine(rest, k - 1)
-                .map(c => [first, ...c]);
+    return [
 
-        const withoutFirst =
-            combine(rest, k);
+        ...combine(rest,k-1)
+            .map(c=>[first,...c]),
 
-        return [
-            ...withFirst,
-            ...withoutFirst
-        ];
-    }
+        ...combine(rest,k)
 
+    ];
+}
 
-    // ============================================================
-    // KIỂM TRA SỐ LIÊN TIẾP
-    // ============================================================
 
-    function hasConsecutive(comb, len) {
+// =====================================================
+// KIỂM TRA SỐ TĂNG SÁT
+// =====================================================
 
-        for (
-            let i = 0;
-            i <= comb.length - len;
-            i++
-        ) {
+function hasConsecutive(comb,len){
 
-            let ok = true;
+    for(
+        let i=0;
+        i<=comb.length-len;
+        i++
+    ){
 
-            for (
-                let j = 0;
-                j < len - 1;
-                j++
-            ) {
+        let ok=true;
 
-                if (
-                    comb[i + j + 1]
-                    !==
-                    comb[i + j] + 1
-                ) {
+        for(
+            let j=0;
+            j<len-1;
+            j++
+        ){
 
-                    ok = false;
-                    break;
+            if(
+                comb[i+j+1]
+                !==
+                comb[i+j]+1
+            ){
 
-                }
-
-            }
-
-            if (ok)
-                return true;
-
-        }
-
-        return false;
-    }
-
-
-    // ============================================================
-    // CHẴN / LẺ
-    // ============================================================
-
-    function isAllEven(arr) {
-
-        return arr.every(
-            x => x % 2 === 0
-        );
-
-    }
-
-
-    function isAllOdd(arr) {
-
-        return arr.every(
-            x => x % 2 === 1
-        );
-
-    }
-
-
-    // ============================================================
-    // NGÀY SINH
-    // Hiện tại không áp dụng bộ lọc này
-    // ============================================================
-
-    function isDateOfBirth(comb) {
-
-        return false;
-
-    }
-
-
-    // ============================================================
-    // CÁC BỘ LỌC CƠ BẢN
-    // ============================================================
-
-    function passesBasicFilters(
-        comb,
-        options
-    ) {
-
-        const {
-            ban3,
-            ban4,
-            ban5,
-            banEvenOdd
-        } = options;
-
-
-        if (
-            ban5 &&
-            hasConsecutive(comb, 5)
-        )
-            return false;
-
-
-        if (
-            ban4 &&
-            hasConsecutive(comb, 4)
-        )
-            return false;
-
-
-        if (
-            ban3 &&
-            hasConsecutive(comb, 3)
-        )
-            return false;
-
-
-        if (
-            banEvenOdd &&
-            (
-                isAllEven(comb)
-                ||
-                isAllOdd(comb)
-            )
-        )
-            return false;
-
-
-        if (
-            isDateOfBirth(comb)
-        )
-            return false;
-
-
-        return true;
-    }
-
-
-    // ============================================================
-    // TẠO TẤT CẢ NHÓM 4 SỐ
-    //
-    // Ví dụ:
-    //
-    // 9 15 20 22 26
-    //
-    // sẽ tạo:
-    //
-    // 15 20 22 26
-    // 9 20 22 26
-    // 9 15 22 26
-    // 9 15 20 26
-    // 9 15 20 22
-    //
-    // Nếu một nhóm 4 đã xuất hiện trong tổ hợp trước,
-    // nghĩa là 2 tổ hợp có 4/5 số giống nhau.
-    // ============================================================
-
-    function getQuadKeys(comb) {
-
-        const quads = [];
-
-        for (
-            let omit = 0;
-            omit < comb.length;
-            omit++
-        ) {
-
-            const quad = [];
-
-            for (
-                let i = 0;
-                i < comb.length;
-                i++
-            ) {
-
-                if (i !== omit) {
-
-                    quad.push(
-                        comb[i]
-                    );
-
-                }
-
-            }
-
-            quads.push(
-                quad.join(',')
-            );
-
-        }
-
-        return quads;
-    }
-
-
-    // ============================================================
-    // SINH TỔ HỢP
-    //
-    // V2:
-    //
-    // - Cho phép trùng 3 số.
-    // - Không cho phép hai bộ có chung 4 số.
-    // ============================================================
-
-    function generateCombinations(
-        numbers,
-        countNeeded,
-        options
-    ) {
-
-        const allCombos =
-            combine(numbers, 5);
-
-        const result = [];
-
-        const usedQuads =
-            new Set();
-
-
-        for (
-            const comb
-            of allCombos
-        ) {
-
-            // ------------------------------------
-            // Kiểm tra các bộ lọc cơ bản
-            // ------------------------------------
-
-            if (
-                !passesBasicFilters(
-                    comb,
-                    options
-                )
-            )
-                continue;
-
-
-            // ------------------------------------
-            // Sinh 5 nhóm 4 số
-            // ------------------------------------
-
-            const quadKeys =
-                getQuadKeys(comb);
-
-
-            let duplicateFour =
-                false;
-
-
-            // ------------------------------------
-            // Kiểm tra nhóm 4 đã dùng chưa
-            // ------------------------------------
-
-            for (
-                const key
-                of quadKeys
-            ) {
-
-                if (
-                    usedQuads.has(key)
-                ) {
-
-                    duplicateFour =
-                        true;
-
-                    break;
-
-                }
-
-            }
-
-
-            // Nếu đã có bộ khác chung 4 số
-            // thì bỏ qua
-
-            if (
-                duplicateFour
-            )
-                continue;
-
-
-            // ------------------------------------
-            // Thêm tổ hợp
-            // ------------------------------------
-
-            result.push(comb);
-
-
-            // ------------------------------------
-            // Đánh dấu 5 nhóm 4 đã sử dụng
-            // ------------------------------------
-
-            for (
-                const key
-                of quadKeys
-            ) {
-
-                usedQuads.add(key);
-
-            }
-
-
-            // ------------------------------------
-            // Đủ số lượng yêu cầu thì dừng
-            // ------------------------------------
-
-            if (
-                result.length
-                >=
-                countNeeded
-            )
+                ok=false;
                 break;
 
+            }
+
         }
 
+        if(ok)
+            return true;
 
-        return result;
     }
 
-
-    // ============================================================
-    // UI
-    // ============================================================
-
-    const inputEl =
-        document.getElementById(
-            'inputNumbers'
-        );
+    return false;
+}
 
 
-    const countEl =
-        document.getElementById(
-            'countNeeded'
-        );
+// =====================================================
+// CHẴN / LẺ
+// =====================================================
+
+function isAllEven(a){
+
+    return a.every(
+        x=>x%2===0
+    );
+
+}
 
 
-    const chk3 =
-        document.getElementById(
-            'chk3'
-        );
+function isAllOdd(a){
+
+    return a.every(
+        x=>x%2===1
+    );
+
+}
 
 
-    const chk4 =
-        document.getElementById(
-            'chk4'
-        );
+// =====================================================
+// ĐỌC DÃY SỐ
+// =====================================================
 
+function parseNumbers(text){
 
-    const chk5 =
-        document.getElementById(
-            'chk5'
-        );
+    return [
 
+        ...new Set(
 
-    const chkEven =
-        document.getElementById(
-            'chkEven'
-        );
-
-
-    const btnGen =
-        document.getElementById(
-            'btnGenerate'
-        );
-
-
-    const btnExport =
-        document.getElementById(
-            'btnExport'
-        );
-
-
-    const btnClear =
-        document.getElementById(
-            'btnClear'
-        );
-
-
-    const statusEl =
-        document.getElementById(
-            'status'
-        );
-
-
-    const statsEl =
-        document.getElementById(
-            'stats'
-        );
-
-
-    const countResult =
-        document.getElementById(
-            'countResult'
-        );
-
-
-    const maxPossible =
-        document.getElementById(
-            'maxPossible'
-        );
-
-
-    const timeTaken =
-        document.getElementById(
-            'timeTaken'
-        );
-
-
-    const resultEl =
-        document.getElementById(
-            'result'
-        );
-
-
-    let lastResult = [];
-
-
-    // ============================================================
-    // ĐỌC DÃY SỐ
-    // ============================================================
-
-    function parseNumbers(text) {
-
-        const tokens =
             text
-                .split(
-                    /[\s,;\n\r]+/
-                )
+                .split(/[\s,;\n\r]+/)
+                .filter(Boolean)
+                .map(Number)
                 .filter(
-                    s =>
-                        s.trim()
-                        !==
-                        ''
+                    n=>
+                        Number.isFinite(n)
+                        &&
+                        n>0
+                )
+
+        )
+
+    ].sort(
+        (a,b)=>a-b
+    );
+
+}
+
+
+// =====================================================
+// ĐỌC DỮ LIỆU LỊCH SỬ
+// MỖI DÒNG = 1 KẾT QUẢ 5 SỐ
+// =====================================================
+
+function parseHistory(text){
+
+    return text
+        .split(/\n+/)
+        .map(
+            line=>
+                parseNumbers(line)
+        )
+        .filter(
+            a=>
+                a.length===5
+        );
+
+}
+
+
+// =====================================================
+// BỘ LỌC CƠ BẢN
+// =====================================================
+
+function passesBasicFilters(
+    comb,
+    opt
+){
+
+    if(
+        opt.ban5
+        &&
+        hasConsecutive(comb,5)
+    )
+        return false;
+
+
+    if(
+        opt.ban4
+        &&
+        hasConsecutive(comb,4)
+    )
+        return false;
+
+
+    if(
+        opt.ban3
+        &&
+        hasConsecutive(comb,3)
+    )
+        return false;
+
+
+    if(
+        opt.banEvenOdd
+        &&
+        (
+            isAllEven(comb)
+            ||
+            isAllOdd(comb)
+        )
+    )
+        return false;
+
+
+    return true;
+}
+
+
+// =====================================================
+// LẤY 5 BỘ 4 SỐ CỦA MỘT TỔ HỢP 5 SỐ
+//
+// Ví dụ:
+//
+// 9 15 20 22 26
+//
+// => 15 20 22 26
+// => 9 20 22 26
+// => 9 15 22 26
+// => 9 15 20 26
+// => 9 15 20 22
+// =====================================================
+
+function getQuadKeys(comb){
+
+    const out=[];
+
+    for(
+        let omit=0;
+        omit<5;
+        omit++
+    ){
+
+        const q=[];
+
+        for(
+            let i=0;
+            i<5;
+            i++
+        ){
+
+            if(i!==omit){
+
+                q.push(
+                    comb[i]
                 );
 
+            }
 
-        // Loại bỏ số trùng
-        // và sắp xếp tăng dần
+        }
 
-        return [
-            ...new Set(
+        out.push(
+            q.join(',')
+        );
 
-                tokens
-                    .map(Number)
-                    .filter(
-                        n =>
-                            !isNaN(n)
-                            &&
-                            n > 0
-                    )
+    }
 
-            )
+    return out;
+}
 
-        ].sort(
-            (a, b) =>
-                a - b
+
+// =====================================================
+// LẤY TẤT CẢ CẶP 2 SỐ
+// C(5,2) = 10 CẶP
+// =====================================================
+
+function getPairKeys(comb){
+
+    const out=[];
+
+    for(
+        let i=0;
+        i<comb.length-1;
+        i++
+    ){
+
+        for(
+            let j=i+1;
+            j<comb.length;
+            j++
+        ){
+
+            out.push(
+                comb[i]
+                +
+                ','
+                +
+                comb[j]
+            );
+
+        }
+
+    }
+
+    return out;
+}
+
+
+// =====================================================
+// HỌC THỐNG KÊ TỪ LỊCH SỬ
+// =====================================================
+
+function buildHistoryStats(history){
+
+    const numFreq=
+        new Map();
+
+    const pairFreq=
+        new Map();
+
+    const quadFreq=
+        new Map();
+
+
+    for(
+        const row
+        of history
+    ){
+
+        // ------------------------------
+        // Tần suất từng số
+        // ------------------------------
+
+        for(
+            const n
+            of row
+        ){
+
+            numFreq.set(
+
+                n,
+
+                (
+                    numFreq.get(n)
+                    ||
+                    0
+                )
+                +
+                1
+
+            );
+
+        }
+
+
+        // ------------------------------
+        // Tần suất từng cặp
+        // ------------------------------
+
+        for(
+            const p
+            of getPairKeys(row)
+        ){
+
+            pairFreq.set(
+
+                p,
+
+                (
+                    pairFreq.get(p)
+                    ||
+                    0
+                )
+                +
+                1
+
+            );
+
+        }
+
+
+        // ------------------------------
+        // Tần suất từng bộ 4
+        // ------------------------------
+
+        for(
+            const q
+            of getQuadKeys(row)
+        ){
+
+            quadFreq.set(
+
+                q,
+
+                (
+                    quadFreq.get(q)
+                    ||
+                    0
+                )
+                +
+                1
+
+            );
+
+        }
+
+    }
+
+
+    return {
+
+        numFreq,
+        pairFreq,
+        quadFreq
+
+    };
+
+}
+
+
+// =====================================================
+// ĐIỂM ĐỘ GIÃN
+//
+// Không coi đây là quy luật xổ số.
+// Chỉ dùng để xếp thứ tự ứng viên.
+// =====================================================
+
+function spacingScore(comb){
+
+    const gaps=[];
+
+
+    for(
+        let i=0;
+        i<comb.length-1;
+        i++
+    ){
+
+        gaps.push(
+
+            comb[i+1]
+            -
+            comb[i]
+
         );
 
     }
 
 
-    // ============================================================
-    // FORMAT
-    // ============================================================
+    const avg=
 
-    function formatComb(comb) {
-
-        return comb.join(' ');
-
-    }
-
-
-    // ============================================================
-    // HIỂN THỊ KẾT QUẢ
-    // ============================================================
-
-    function renderResult(combos) {
-
-        if (
-            combos.length === 0
-        ) {
-
-            resultEl.style.display =
-                'none';
-
-            return;
-
-        }
+        gaps.reduce(
+            (a,b)=>a+b,
+            0
+        )
+        /
+        gaps.length;
 
 
-        resultEl.style.display =
-            'block';
+    const variance=
+
+        gaps.reduce(
+
+            (s,g)=>
+                s
+                +
+                Math.pow(
+                    g-avg,
+                    2
+                ),
+
+            0
+
+        )
+        /
+        gaps.length;
 
 
-        resultEl.innerHTML =
-            combos
-                .map(
-                    c =>
-                        `<span class="b">${formatComb(c)}</span>`
-                )
-                .join('');
+    return Math.max(
 
-    }
+        0,
+
+        12
+        -
+        Math.abs(
+            avg-4
+        )
+        *
+        1.5
+        -
+        Math.sqrt(
+            variance
+        )
+
+    );
+
+}
 
 
-    // ============================================================
-    // CHẠY TẠO TỔ HỢP
-    // ============================================================
+// =====================================================
+// CHẤM ĐIỂM TỔ HỢP
+// =====================================================
 
-    function runGenerate() {
+function scoreCombo(
+    comb,
+    stats
+){
 
-        const nums =
-            parseNumbers(
-                inputEl.value
+    let numScore=0;
+
+
+    // -------------------------------------------------
+// TẦN SUẤT TỪNG SỐ
+// -------------------------------------------------
+
+    for(
+        const n
+        of comb
+    ){
+
+        numScore +=
+
+            (
+                stats.numFreq.get(n)
+                ||
+                0
             );
 
-
-        // ------------------------------------
-        // Kiểm tra số lượng đầu vào
-        // ------------------------------------
-
-        if (
-            nums.length < 5
-        ) {
-
-            statusEl.className =
-                'status error';
+    }
 
 
-            statusEl.textContent =
-                '❌ Cần ít nhất 5 số hợp lệ!';
+    // -------------------------------------------------
+// TẦN SUẤT CẶP SỐ
+// -------------------------------------------------
+
+    let pairScore=0;
 
 
-            return;
+    for(
+        const p
+        of getPairKeys(comb)
+    ){
+
+        pairScore +=
+
+            (
+                stats.pairFreq.get(p)
+                ||
+                0
+            )
+            *
+            2.2;
+
+    }
+
+
+    // -------------------------------------------------
+// ĐỘ MỚI CỦA BỘ 4
+// -------------------------------------------------
+
+    let quadNovelty=0;
+
+
+    for(
+        const q
+        of getQuadKeys(comb)
+    ){
+
+        const f=
+
+            stats.quadFreq.get(q)
+            ||
+            0;
+
+
+        if(f===0){
+
+            quadNovelty += 5;
+
+        }
+        else{
+
+            quadNovelty -=
+                40*f;
 
         }
 
+    }
 
-        // ------------------------------------
-        // Số bộ cần sinh
-        // ------------------------------------
 
-        const count =
+    // -------------------------------------------------
+// TỔNG ĐIỂM
+// -------------------------------------------------
+
+    return
+
+        numScore
+        *
+        1.8
+
+        +
+
+        pairScore
+
+        +
+
+        quadNovelty
+
+        +
+
+        spacingScore(comb);
+
+}
+
+
+// =====================================================
+// SO SÁNH 2 TỔ HỢP
+// =====================================================
+
+function sameComb(a,b){
+
+    return
+
+        a.length===b.length
+
+        &&
+
+        a.every(
+            (x,i)=>
+                x===b[i]
+        );
+
+}
+
+
+// =====================================================
+// DOM
+// =====================================================
+
+const inputEl=
+    document.getElementById(
+        'inputNumbers'
+    );
+
+
+const countEl=
+    document.getElementById(
+        'countNeeded'
+    );
+
+
+const targetEl=
+    document.getElementById(
+        'targetInput'
+    );
+
+
+const historyEl=
+    document.getElementById(
+        'historyInput'
+    );
+
+
+const chk3=
+    document.getElementById(
+        'chk3'
+    );
+
+
+const chk4=
+    document.getElementById(
+        'chk4'
+    );
+
+
+const chk5=
+    document.getElementById(
+        'chk5'
+    );
+
+
+const chkEven=
+    document.getElementById(
+        'chkEven'
+    );
+
+
+const btnGen=
+    document.getElementById(
+        'btnGenerate'
+    );
+
+
+const btnExport=
+    document.getElementById(
+        'btnExport'
+    );
+
+
+const btnClear=
+    document.getElementById(
+        'btnClear'
+    );
+
+
+const statusEl=
+    document.getElementById(
+        'status'
+    );
+
+
+const statsEl=
+    document.getElementById(
+        'stats'
+    );
+
+
+const countResult=
+    document.getElementById(
+        'countResult'
+    );
+
+
+const basicCount=
+    document.getElementById(
+        'basicCount'
+    );
+
+
+const historyCount=
+    document.getElementById(
+        'historyCount'
+    );
+
+
+const targetRank=
+    document.getElementById(
+        'targetRank'
+    );
+
+
+const targetIn400=
+    document.getElementById(
+        'targetIn400'
+    );
+
+
+const timeTaken=
+    document.getElementById(
+        'timeTaken'
+    );
+
+
+const resultEl=
+    document.getElementById(
+        'result'
+    );
+
+
+const targetInfo=
+    document.getElementById(
+        'targetInfo'
+    );
+
+
+let lastResult=[];
+
+
+// =====================================================
+// CHẠY TẠO VÀ XẾP HẠNG
+// =====================================================
+
+function runGenerate(){
+
+    const t0=
+        performance.now();
+
+
+    const nums=
+        parseNumbers(
+            inputEl.value
+        );
+
+
+    const target=
+        parseNumbers(
+            targetEl.value
+        );
+
+
+    const history=
+        parseHistory(
+            historyEl.value
+        );
+
+
+    const count=
+        Math.max(
+
+            1,
+
             parseInt(
                 countEl.value,
                 10
             )
             ||
-            400;
+            400
 
-
-        if (
-            count < 1
-        ) {
-
-            statusEl.className =
-                'status error';
-
-
-            statusEl.textContent =
-                '❌ Số lượng phải >= 1';
-
-
-            return;
-
-        }
-
-
-        // ------------------------------------
-        // Lấy lựa chọn checkbox
-        // ------------------------------------
-
-        const options = {
-
-            ban3:
-                chk3.checked,
-
-            ban4:
-                chk4.checked,
-
-            ban5:
-                chk5.checked,
-
-            banEvenOdd:
-                chkEven.checked
-
-        };
-
-
-        statusEl.className =
-            'status';
-
-
-        statusEl.textContent =
-            '⏳ Đang tạo tổ hợp...';
-
-
-        const start =
-            performance.now();
-
-
-        // ------------------------------------
-        // Sinh tất cả C(n,5)
-        // ------------------------------------
-
-        const allCombos =
-            combine(
-                nums,
-                5
-            );
-
-
-        // ------------------------------------
-        // Đếm số bộ qua điều kiện cơ bản
-        //
-        // Chưa áp dụng quy tắc chống trùng 4/5
-        // ------------------------------------
-
-        const basicValidCount =
-            allCombos.reduce(
-
-                (
-                    sum,
-                    comb
-                ) =>
-
-                    sum
-                    +
-                    (
-                        passesBasicFilters(
-                            comb,
-                            options
-                        )
-                        ?
-                        1
-                        :
-                        0
-                    ),
-
-                0
-
-            );
-
-
-        // ------------------------------------
-        // Sinh kết quả chính thức
-        // ------------------------------------
-
-        const result =
-            generateCombinations(
-
-                nums,
-
-                count,
-
-                options
-
-            );
-
-
-        const end =
-            performance.now();
-
-
-        lastResult =
-            result;
-
-
-        // ========================================================
-        // HIỂN THỊ THỐNG KÊ
-        // ========================================================
-
-        statsEl.style.display =
-            'flex';
-
-
-        countResult.textContent =
-            result.length;
-
-
-        maxPossible.textContent =
-            basicValidCount;
-
-
-        timeTaken.textContent =
-            Math.round(
-                end - start
-            );
-
-
-        // ========================================================
-        // HIỂN THỊ DANH SÁCH
-        // ========================================================
-
-        renderResult(
-            result
         );
 
 
-        // ========================================================
-        // THÔNG BÁO
-        // ========================================================
+    // -------------------------------------------------
+// KIỂM TRA INPUT
+// -------------------------------------------------
 
-        if (
-            result.length === 0
-        ) {
+    if(
+        nums.length<5
+    ){
 
-            statusEl.className =
-                'status error';
-
-
-            statusEl.textContent =
-                `❌ Không tìm thấy bộ nào! Có ${basicValidCount} bộ qua điều kiện cơ bản.`;
-
-        }
-
-        else if (
-            result.length
-            <
-            count
-        ) {
-
-            statusEl.className =
-                'status';
+        statusEl.className=
+            'status error';
 
 
-            statusEl.textContent =
-                `⚠️ Chỉ tạo được ${result.length}/${count} bộ sau khi áp dụng quy tắc không trùng 4/5 số.`;
-
-        }
-
-        else {
-
-            statusEl.className =
-                'status';
+        statusEl.textContent=
+            '❌ Cần ít nhất 5 số đầu vào.';
 
 
-            statusEl.textContent =
-                `✅ Thành công! Đã tạo ${result.length} bộ. Cho phép trùng bộ 3, chỉ cấm trùng 4/5 số.`;
-
-        }
+        return;
 
     }
 
 
-    // ============================================================
-    // XUẤT TXT
-    // ============================================================
+    if(
+        target.length!==5
+    ){
 
-    function exportTxt() {
+        statusEl.className=
+            'status error';
 
-        if (
-            lastResult.length === 0
-        ) {
 
-            alert(
-                'Chưa có kết quả để xuất!'
+        statusEl.textContent=
+            '❌ Bộ mục tiêu phải có đúng 5 số.';
+
+
+        return;
+
+    }
+
+
+    // -------------------------------------------------
+// OPTION
+// -------------------------------------------------
+
+    const opt={
+
+        ban3:
+            chk3.checked,
+
+        ban4:
+            chk4.checked,
+
+        ban5:
+            chk5.checked,
+
+        banEvenOdd:
+            chkEven.checked
+
+    };
+
+
+    // -------------------------------------------------
+// HỌC LỊCH SỬ
+// -------------------------------------------------
+
+    const stats=
+        buildHistoryStats(
+            history
+        );
+
+
+    // -------------------------------------------------
+// SINH TẤT CẢ C(n,5)
+// -------------------------------------------------
+
+    const all=
+        combine(
+            nums,
+            5
+        );
+
+
+    // -------------------------------------------------
+// BỘ LỌC CƠ BẢN
+// -------------------------------------------------
+
+    const basic=
+
+        all.filter(
+
+            c=>
+                passesBasicFilters(
+                    c,
+                    opt
+                )
+
+        );
+
+
+    // -------------------------------------------------
+// LOẠI ỨNG VIÊN CÓ BỘ 4 ĐÃ XUẤT HIỆN
+// TRONG LỊCH SỬ
+// -------------------------------------------------
+
+    const afterHistory=
+
+        basic.filter(
+
+            c=>{
+
+                const quads=
+                    getQuadKeys(c);
+
+
+                return
+
+                    !quads.some(
+
+                        q=>
+
+                            (
+                                stats.quadFreq.get(q)
+                                ||
+                                0
+                            )
+                            >
+                            0
+
+                    );
+
+            }
+
+        );
+
+
+    // -------------------------------------------------
+// CHẤM ĐIỂM VÀ XẾP HẠNG
+// -------------------------------------------------
+
+    const ranked=
+
+        afterHistory
+
+            .map(
+
+                c=>({
+
+                    comb:c,
+
+                    score:
+                        scoreCombo(
+                            c,
+                            stats
+                        )
+
+                })
+
+            )
+
+            .sort(
+
+                (a,b)=>
+
+                    b.score
+                    -
+                    a.score
+
+                    ||
+
+                    a.comb
+                        .join(',')
+                        .localeCompare(
+                            b.comb.join(',')
+                        )
+
             );
 
-            return;
 
-        }
+    // -------------------------------------------------
+// TÌM HẠNG CỦA BỘ MỤC TIÊU
+// TRƯỚC KHI CHỌN 400
+// -------------------------------------------------
+
+    const rankIndex=
+
+        ranked.findIndex(
+
+            x=>
+                sameComb(
+                    x.comb,
+                    target
+                )
+
+        );
 
 
-        const lines =
-            lastResult.map(
-                c =>
-                    c.join(' ')
+    // =================================================
+// CHỌN DANH SÁCH CUỐI
+//
+// Sau khi đã xếp hạng:
+//
+// Không cho hai bộ trong kết quả
+// có chung 4 số.
+// =================================================
+
+    const usedQuads=
+        new Set();
+
+
+    const selected=[];
+
+
+    for(
+        const item
+        of ranked
+    ){
+
+        const qs=
+            getQuadKeys(
+                item.comb
             );
 
 
-        const content =
-            lines.join('\n');
+        // ---------------------------------------------
+        // Nếu bất kỳ bộ 4 nào đã bị dùng
+        // thì bỏ ứng viên này
+        // ---------------------------------------------
+
+        if(
+
+            qs.some(
+
+                q=>
+                    usedQuads.has(q)
+
+            )
+
+        )
+            continue;
 
 
-        const blob =
-            new Blob(
+        // ---------------------------------------------
+        // Chọn ứng viên
+        // ---------------------------------------------
 
-                [content],
+        selected.push(
+            item
+        );
 
-                {
-                    type:
-                        'text/plain;charset=utf-8'
+
+        // ---------------------------------------------
+        // Đánh dấu 5 bộ 4
+        // ---------------------------------------------
+
+        qs.forEach(
+
+            q=>
+                usedQuads.add(q)
+
+        );
+
+
+        // ---------------------------------------------
+        // Đủ số lượng thì dừng
+        // ---------------------------------------------
+
+        if(
+            selected.length
+            >=
+            count
+        )
+            break;
+
+    }
+
+
+    // =================================================
+// KẾT QUẢ
+// =================================================
+
+    lastResult=
+
+        selected.map(
+            x=>x.comb
+        );
+
+
+    const targetSelectedIndex=
+
+        lastResult.findIndex(
+
+            c=>
+                sameComb(
+                    c,
+                    target
+                )
+
+        );
+
+
+    // =================================================
+// THỐNG KÊ
+// =================================================
+
+    statsEl.style.display=
+        'flex';
+
+
+    countResult.textContent=
+        lastResult.length;
+
+
+    basicCount.textContent=
+        basic.length;
+
+
+    historyCount.textContent=
+        afterHistory.length;
+
+
+    targetRank.textContent=
+
+        rankIndex>=0
+
+        ?
+
+        String(
+            rankIndex+1
+        )
+
+        :
+
+        'Bị loại';
+
+
+    targetIn400.textContent=
+
+        targetSelectedIndex>=0
+
+        ?
+
+        `Có (#${targetSelectedIndex+1})`
+
+        :
+
+        'Không';
+
+
+    timeTaken.textContent=
+
+        Math.round(
+
+            performance.now()
+            -
+            t0
+
+        );
+
+
+    // =================================================
+// HIỂN THỊ DANH SÁCH
+// =================================================
+
+    resultEl.style.display=
+
+        lastResult.length
+
+        ?
+
+        'block'
+
+        :
+
+        'none';
+
+
+    resultEl.innerHTML=
+
+        selected
+
+            .map(
+
+                (x,i)=>{
+
+                    const cls=
+
+                        sameComb(
+                            x.comb,
+                            target
+                        )
+
+                        ?
+
+                        'b target'
+
+                        :
+
+                        'b';
+
+
+                    return `
+
+                        <span
+                            class="${cls}"
+                            title="Hạng chọn ${i+1} | điểm ${x.score.toFixed(2)}"
+                        >
+
+                            ${x.comb.join(' ')}
+
+                        </span>
+
+                    `;
+
                 }
 
-            );
+            )
+
+            .join('');
 
 
-        const url =
-            URL.createObjectURL(
-                blob
-            );
+// =================================================
+// PHÂN TÍCH 5 BỘ 4 CỦA MỤC TIÊU
+// =================================================
 
-
-        const a =
-            document.createElement(
-                'a'
-            );
-
-
-        a.href =
-            url;
-
-
-        a.download =
-            `combinations_${lastResult.length}.txt`;
-
-
-        document.body.appendChild(
-            a
+    const targetQuads=
+        getQuadKeys(
+            target
         );
 
 
-        a.click();
+    const collisionRows=
+
+        targetQuads
+
+            .map(
+
+                q=>{
+
+                    const f=
+
+                        stats.quadFreq.get(q)
+                        ||
+                        0;
 
 
-        a.remove();
+                    return `
+
+                    <tr>
+
+                        <td>
+                            ${q.replaceAll(',',' ')}
+                        </td>
+
+                        <td>
+                            ${f}
+                        </td>
+
+                        <td>
+
+                            ${
+                                f===0
+                                ?
+                                'Mới'
+                                :
+                                'Đã có trong lịch sử'
+                            }
+
+                        </td>
+
+                    </tr>
+
+                    `;
+
+                }
+
+            )
+
+            .join('');
 
 
-        setTimeout(
+// =================================================
+// BẢNG PHÂN TÍCH MỤC TIÊU
+// =================================================
 
-            () =>
-                URL.revokeObjectURL(
-                    url
-                ),
+    targetInfo.innerHTML=`
 
-            1000
+        <table>
 
+            <tr>
+
+                <th colspan="3">
+
+                    🎯 Phân tích bộ mục tiêu
+                    ${target.join(' ')}
+
+                </th>
+
+            </tr>
+
+            <tr>
+
+                <th>
+                    Bộ 4
+                </th>
+
+                <th>
+                    Số lần lịch sử
+                </th>
+
+                <th>
+                    Trạng thái
+                </th>
+
+            </tr>
+
+            ${collisionRows}
+
+        </table>
+
+    `;
+
+
+// =================================================
+// STATUS
+// =================================================
+
+    statusEl.className=
+        'status';
+
+
+    if(
+        targetSelectedIndex>=0
+    ){
+
+        statusEl.textContent=
+
+            `✅ Đã tạo ${lastResult.length} bộ. Bộ mục tiêu ${target.join(' ')} nằm ở vị trí #${targetSelectedIndex+1} trong danh sách chọn.`;
+
+    }
+
+    else{
+
+        statusEl.textContent=
+
+            `⚠️ Đã tạo ${lastResult.length} bộ nhưng bộ mục tiêu ${target.join(' ')} chưa vào danh sách. Hạng trước khi áp dụng chống trùng 4 là ${rankIndex>=0 ? rankIndex+1 : 'bị loại bởi lịch sử/bộ lọc'}.`;
+
+    }
+
+}
+
+
+// =====================================================
+// XUẤT FILE TXT
+// =====================================================
+
+function exportTxt(){
+
+    if(
+        !lastResult.length
+    ){
+
+        alert(
+            'Chưa có kết quả để xuất!'
         );
+
+        return;
 
     }
 
 
-    // ============================================================
-    // EVENTS
-    // ============================================================
+    const blob=
 
-    btnGen.addEventListener(
+        new Blob(
 
-        'click',
+            [
 
-        runGenerate
+                lastResult
 
+                    .map(
+                        c=>c.join(' ')
+                    )
+
+                    .join('\n')
+
+            ],
+
+            {
+
+                type:
+                    'text/plain;charset=utf-8'
+
+            }
+
+        );
+
+
+    const url=
+
+        URL.createObjectURL(
+            blob
+        );
+
+
+    const a=
+
+        document.createElement(
+            'a'
+        );
+
+
+    a.href=
+        url;
+
+
+    a.download=
+
+        `combinations_history_${lastResult.length}.txt`;
+
+
+    document.body.appendChild(
+        a
     );
 
 
-    btnExport.addEventListener(
-
-        'click',
-
-        exportTxt
-
-    );
+    a.click();
 
 
-    btnClear.addEventListener(
+    a.remove();
 
-        'click',
-
-        () => {
-
-            lastResult = [];
-
-
-            resultEl.innerHTML =
-                '';
-
-
-            resultEl.style.display =
-                'none';
-
-
-            statsEl.style.display =
-                'none';
-
-
-            statusEl.className =
-                'status';
-
-
-            statusEl.textContent =
-                '🗑️ Đã xóa kết quả.';
-
-        }
-
-    );
-
-
-    // ============================================================
-    // TỰ CHẠY KHI MỞ TRANG
-    // ============================================================
 
     setTimeout(
 
-        runGenerate,
+        ()=>URL.revokeObjectURL(
+            url
+        ),
 
-        100
+        1000
 
     );
+
+}
+
+
+// =====================================================
+// EVENTS
+// =====================================================
+
+btnGen.addEventListener(
+
+    'click',
+
+    runGenerate
+
+);
+
+
+btnExport.addEventListener(
+
+    'click',
+
+    exportTxt
+
+);
+
+
+btnClear.addEventListener(
+
+    'click',
+
+    ()=>{
+
+        lastResult=[];
+
+
+        resultEl.innerHTML=
+            '';
+
+
+        resultEl.style.display=
+            'none';
+
+
+        statsEl.style.display=
+            'none';
+
+
+        targetInfo.innerHTML=
+            '';
+
+
+        statusEl.className=
+            'status';
+
+
+        statusEl.textContent=
+            '🗑️ Đã xóa kết quả.';
+
+    }
+
+);
+
+
+// =====================================================
+// TỰ CHẠY KHI MỞ HTML
+// =====================================================
+
+setTimeout(
+
+    runGenerate,
+
+    100
+
+);
 
 
 })();
