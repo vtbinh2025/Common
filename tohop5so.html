@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tạo tổ hợp 5 số - học từ lịch sử</title>
+<title>Tạo tổ hợp 5 số V6 - lịch sử + yếu tố bất ngờ</title>
 
 <style>
 *{
@@ -162,6 +162,22 @@ button:hover{
     font-weight:bold;
     background:#fff3f2
 }
+.surprise-num{
+    display:inline-block;
+    padding:1px 4px;
+    border-radius:4px;
+    background:#fff3cd;
+    color:#8a5a00;
+    border:1px solid #f0c36d;
+    font-weight:800
+}
+.surprise-tag{
+    display:inline-block;
+    margin-left:4px;
+    font-size:10px;
+    color:#8a5a00;
+    font-weight:700
+}
 
 table{
     width:100%;
@@ -197,7 +213,7 @@ th{
 
 <div class="container">
 
-<h1>🧮 Tạo tổ hợp 5 số - học từ dữ liệu lịch sử</h1>
+<h1>🧮 Tạo tổ hợp 5 số V6 - lịch sử + yếu tố bất ngờ</h1>
 
 <div class="row">
 
@@ -229,6 +245,16 @@ th{
                 id="targetInput"
                 value="9 15 20 22 26"
             >
+
+            <label style="font-weight:normal;margin-top:7px">
+                <input
+                    type="checkbox"
+                    id="chkBacktestExcludeTarget"
+                    checked
+                    style="width:auto"
+                >
+                Backtest: tự bỏ <b>1 dòng lịch sử trùng chính xác bộ mục tiêu</b> để tránh tự loại chính kỳ đang kiểm tra
+            </label>
 
         </div>
 
@@ -271,6 +297,46 @@ th{
                 >
                 Toàn chẵn/lẻ
             </label>
+
+            <label style="font-weight:normal;margin-top:7px">
+                <input
+                    type="checkbox"
+                    id="chkHardHistory"
+                    style="width:auto"
+                >
+                Lọc cứng bộ 4 đã có trong lịch sử
+                <span class="small">(mặc định tắt; lịch sử vẫn dùng để chấm điểm)</span>
+            </label>
+
+            <div style="margin-top:10px;padding-top:8px;border-top:1px dashed #d6d9dd">
+                <label style="font-weight:normal">
+                    <input
+                        type="checkbox"
+                        id="chkSurprise"
+                        checked
+                        style="width:auto"
+                    >
+                    Luôn có <b>1 số mang yếu tố bất ngờ</b> trong mỗi bộ
+                </label>
+
+                <label style="font-weight:normal;margin-top:5px">
+                    Trọng số bất ngờ:
+                    <input
+                        type="number"
+                        id="surpriseWeight"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value="18"
+                        style="width:75px;padding:5px;display:inline-block"
+                    >
+                </label>
+
+                <div class="small">
+                    “Bất ngờ” = số hiếm hơn trong lịch sử và ít liên kết cặp với 4 số còn lại.
+                    Số này được cộng thêm điểm nhưng không phá các bộ lọc hiện có.
+                </div>
+            </div>
 
         </div>
 
@@ -325,15 +391,22 @@ th{
 
 <div class="note">
 
-Quy tắc V3:
+Quy tắc V5:
 
-trước tiên loại các ứng viên chứa
-<b>bộ 4 số đã từng xuất hiện trong lịch sử</b>.
+Nếu bật <b>Backtest</b>, chương trình tự bỏ đúng <b>1 dòng lịch sử trùng chính xác bộ mục tiêu</b>
+trước khi học thống kê, tránh data leakage.
 
-Sau đó chấm điểm theo tần suất số,
-cặp số, độ mới của bộ 4 và độ giãn khoảng cách.
+<b>Lịch sử mặc định chỉ dùng để chấm điểm</b>: bộ 4 đã từng xuất hiện sẽ bị trừ điểm mạnh,
+nhưng không bị loại tuyệt đối. Cách này tránh trường hợp dữ liệu lịch sử càng nhiều thì toàn bộ ứng viên bị xóa sạch.
 
-Cuối cùng mới chọn 400 bộ với quy tắc
+Nếu muốn thử quy tắc cũ, có thể bật <b>Lọc cứng bộ 4 đã có trong lịch sử</b>.
+Nếu lọc cứng làm số ứng viên về 0, chương trình sẽ <b>tự fallback sang chấm điểm</b> thay vì trả về 0 bộ.
+
+V6 bổ sung <b>yếu tố bất ngờ</b>: trong mỗi tổ hợp, chương trình xác định đúng 1 số có độ hiếm lịch sử cao hơn
+và mức liên kết cặp thấp hơn với 4 số còn lại. Số này được cộng một phần điểm để tạo độ đa dạng,
+nhưng không thay thế các tiêu chí lịch sử chính.
+
+Cuối cùng chọn theo xếp hạng với quy tắc
 <b>không để hai bộ được chọn trùng 4/5 số</b>.
 
 </div>
@@ -387,7 +460,7 @@ Cuối cùng mới chọn 400 bộ với quy tắc
     </span>
 
     <span>
-        🧹 Còn lại sau lọc lịch sử:
+        🧹 Ứng viên đưa vào xếp hạng:
         <b id="historyCount">0</b>
     </span>
 
@@ -399,6 +472,11 @@ Cuối cùng mới chọn 400 bộ với quy tắc
     <span>
         🎯 Có trong 400:
         <b id="targetIn400">—</b>
+    </span>
+
+    <span>
+        ✨ Yếu tố bất ngờ:
+        <b id="surpriseState">ON</b>
     </span>
 
     <span>
@@ -612,6 +690,100 @@ function passesBasicFilters(
 
 
     return true;
+}
+
+
+// =====================================================
+// GIẢI THÍCH LÝ DO BỊ LỌC CƠ BẢN
+// =====================================================
+
+function basicFilterReasons(
+    comb,
+    opt
+){
+
+    const reasons=[];
+
+    if(
+        opt.ban5
+        &&
+        hasConsecutive(comb,5)
+    )
+        reasons.push('5 số tăng sát');
+
+    if(
+        opt.ban4
+        &&
+        hasConsecutive(comb,4)
+    )
+        reasons.push('4 số tăng sát');
+
+    if(
+        opt.ban3
+        &&
+        hasConsecutive(comb,3)
+    )
+        reasons.push('3 số tăng sát');
+
+    if(
+        opt.banEvenOdd
+        &&
+        isAllEven(comb)
+    )
+        reasons.push('toàn số chẵn');
+
+    if(
+        opt.banEvenOdd
+        &&
+        isAllOdd(comb)
+    )
+        reasons.push('toàn số lẻ');
+
+    return reasons;
+
+}
+
+
+// =====================================================
+// BACKTEST: BỎ ĐÚNG 1 DÒNG LỊCH SỬ TRÙNG MỤC TIÊU
+//
+// Không bỏ tất cả dòng giống nhau vì một bộ 5 số
+// có thể từng xuất hiện ở kỳ lịch sử khác.
+// =====================================================
+
+function removeOneExactTargetRow(
+    history,
+    target
+){
+
+    const idx=
+        history.findIndex(
+            row=>
+                sameComb(
+                    row,
+                    target
+                )
+        );
+
+    if(idx<0){
+
+        return {
+            history:[...history],
+            removed:false,
+            removedIndex:-1
+        };
+
+    }
+
+    return {
+        history:[
+            ...history.slice(0,idx),
+            ...history.slice(idx+1)
+        ],
+        removed:true,
+        removedIndex:idx
+    };
+
 }
 
 
@@ -896,12 +1068,206 @@ function spacingScore(comb){
 
 
 // =====================================================
+// YẾU TỐ BẤT NGỜ
+//
+// Chọn đúng 1 số trong tổ hợp có:
+// 1) tần suất lịch sử thấp hơn;
+// 2) mức liên kết cặp với 4 số còn lại thấp hơn.
+//
+// surpriseScore chuẩn hóa xấp xỉ 0..1.
+// =====================================================
+
+function getSurpriseInfo(
+    comb,
+    stats
+){
+
+    let maxNumFreq=1;
+    let maxPairFreq=1;
+
+    for(
+        const v
+        of stats.numFreq.values()
+    ){
+
+        if(v>maxNumFreq)
+            maxNumFreq=v;
+
+    }
+
+    for(
+        const v
+        of stats.pairFreq.values()
+    ){
+
+        if(v>maxPairFreq)
+            maxPairFreq=v;
+
+    }
+
+
+    let bestNumber=comb[0];
+    let bestScore=-Infinity;
+    let bestNumFreq=0;
+    let bestAvgPair=0;
+
+
+    for(
+        const n
+        of comb
+    ){
+
+        const numFreq=
+            stats.numFreq.get(n)
+            ||
+            0;
+
+
+        let pairTotal=0;
+        let pairCount=0;
+
+
+        for(
+            const other
+            of comb
+        ){
+
+            if(other===n)
+                continue;
+
+
+            const a=
+                Math.min(
+                    n,
+                    other
+                );
+
+
+            const b=
+                Math.max(
+                    n,
+                    other
+                );
+
+
+            pairTotal +=
+                stats.pairFreq.get(
+                    a+','+b
+                )
+                ||
+                0;
+
+
+            pairCount++;
+
+        }
+
+
+        const avgPair=
+
+            pairCount
+
+            ?
+
+            pairTotal
+            /
+            pairCount
+
+            :
+
+            0;
+
+
+        const rarity=
+
+            1
+            -
+            (
+                numFreq
+                /
+                maxNumFreq
+            );
+
+
+        const isolation=
+
+            1
+            -
+            Math.min(
+                1,
+                avgPair
+                /
+                maxPairFreq
+            );
+
+
+        const surpriseScore=
+
+            rarity
+            *
+            0.70
+
+            +
+
+            isolation
+            *
+            0.30;
+
+
+        if(
+            surpriseScore
+            >
+            bestScore
+        ){
+
+            bestScore=
+                surpriseScore;
+
+            bestNumber=
+                n;
+
+            bestNumFreq=
+                numFreq;
+
+            bestAvgPair=
+                avgPair;
+
+        }
+
+    }
+
+
+    return {
+
+        number:
+            bestNumber,
+
+        score:
+            Math.max(
+                0,
+                bestScore
+            ),
+
+        numFreq:
+            bestNumFreq,
+
+        avgPair:
+            bestAvgPair
+
+    };
+
+}
+
+
+// =====================================================
 // CHẤM ĐIỂM TỔ HỢP
 // =====================================================
 
 function scoreCombo(
     comb,
-    stats
+    stats,
+    surpriseEnabled,
+    surpriseWeight
 ){
 
     let numScore=0;
@@ -990,7 +1356,7 @@ function scoreCombo(
 // TỔNG ĐIỂM
 // -------------------------------------------------
 
-    return
+    const baseScore=
 
         numScore
         *
@@ -1007,6 +1373,46 @@ function scoreCombo(
         +
 
         spacingScore(comb);
+
+
+    const surprise=
+
+        getSurpriseInfo(
+            comb,
+            stats
+        );
+
+
+    const surpriseBonus=
+
+        surpriseEnabled
+
+        ?
+
+        surprise.score
+        *
+        surpriseWeight
+
+        :
+
+        0;
+
+
+    return {
+
+        total:
+            baseScore
+            +
+            surpriseBonus,
+
+        base:
+            baseScore,
+
+        surprise,
+
+        surpriseBonus
+
+    };
 
 }
 
@@ -1083,6 +1489,30 @@ const chkEven=
     );
 
 
+const chkBacktestExcludeTarget=
+    document.getElementById(
+        'chkBacktestExcludeTarget'
+    );
+
+
+const chkHardHistory=
+    document.getElementById(
+        'chkHardHistory'
+    );
+
+
+const chkSurprise=
+    document.getElementById(
+        'chkSurprise'
+    );
+
+
+const surpriseWeightEl=
+    document.getElementById(
+        'surpriseWeight'
+    );
+
+
 const btnGen=
     document.getElementById(
         'btnGenerate'
@@ -1149,6 +1579,12 @@ const timeTaken=
     );
 
 
+const surpriseState=
+    document.getElementById(
+        'surpriseState'
+    );
+
+
 const resultEl=
     document.getElementById(
         'result'
@@ -1186,7 +1622,7 @@ function runGenerate(){
         );
 
 
-    const history=
+    const historyRaw=
         parseHistory(
             historyEl.value
         );
@@ -1266,6 +1702,51 @@ function runGenerate(){
     };
 
 
+    const surpriseEnabled=
+        chkSurprise.checked;
+
+
+    const surpriseWeight=
+
+        Math.max(
+            0,
+            Number(
+                surpriseWeightEl.value
+            )
+            ||
+            0
+        );
+
+
+    // -------------------------------------------------
+// CHUẨN BỊ LỊCH SỬ CHO BACKTEST
+// -------------------------------------------------
+
+    let history=
+        historyRaw;
+
+    let backtestRemoved={
+        removed:false,
+        removedIndex:-1
+    };
+
+
+    if(
+        chkBacktestExcludeTarget.checked
+    ){
+
+        backtestRemoved=
+            removeOneExactTargetRow(
+                historyRaw,
+                target
+            );
+
+        history=
+            backtestRemoved.history;
+
+    }
+
+
     // -------------------------------------------------
 // HỌC LỊCH SỬ
 // -------------------------------------------------
@@ -1305,11 +1786,24 @@ function runGenerate(){
 
 
     // -------------------------------------------------
-// LOẠI ỨNG VIÊN CÓ BỘ 4 ĐÃ XUẤT HIỆN
-// TRONG LỊCH SỬ
+// XỬ LÝ BỘ 4 LỊCH SỬ
+//
+// V5:
+// - Mặc định KHÔNG loại cứng.
+// - Lịch sử vẫn tác động mạnh qua scoreCombo()/quadNovelty.
+// - Nếu người dùng bật lọc cứng mà lọc sạch 100% ứng viên,
+//   tự fallback về basic để không trả về 0 bộ.
 // -------------------------------------------------
 
-    const afterHistory=
+    const hardHistoryRequested=
+        chkHardHistory.checked;
+
+
+    const historyHardFiltered=
+
+        hardHistoryRequested
+
+        ?
 
         basic.filter(
 
@@ -1317,7 +1811,6 @@ function runGenerate(){
 
                 const quads=
                     getQuadKeys(c);
-
 
                 return
 
@@ -1337,7 +1830,40 @@ function runGenerate(){
 
             }
 
-        );
+        )
+
+        :
+
+        basic;
+
+
+    const historyFallbackUsed=
+
+        hardHistoryRequested
+        &&
+        basic.length>0
+        &&
+        historyHardFiltered.length===0;
+
+
+    const hardHistoryApplied=
+
+        hardHistoryRequested
+        &&
+        !historyFallbackUsed;
+
+
+    const afterHistory=
+
+        hardHistoryApplied
+
+        ?
+
+        historyHardFiltered
+
+        :
+
+        basic;
 
 
     // -------------------------------------------------
@@ -1350,17 +1876,37 @@ function runGenerate(){
 
             .map(
 
-                c=>({
+                c=>{
 
-                    comb:c,
+                    const scored=
 
-                    score:
                         scoreCombo(
                             c,
-                            stats
-                        )
+                            stats,
+                            surpriseEnabled,
+                            surpriseWeight
+                        );
 
-                })
+
+                    return {
+
+                        comb:c,
+
+                        score:
+                            scored.total,
+
+                        baseScore:
+                            scored.base,
+
+                        surprise:
+                            scored.surprise,
+
+                        surpriseBonus:
+                            scored.surpriseBonus
+
+                    };
+
+                }
 
             )
 
@@ -1381,6 +1927,67 @@ function runGenerate(){
                         )
 
             );
+
+
+    // -------------------------------------------------
+// CHẨN ĐOÁN BỘ MỤC TIÊU
+// -------------------------------------------------
+
+    const missingTargetNumbers=
+
+        target.filter(
+            n=>
+                !nums.includes(n)
+        );
+
+
+    const targetBasicReasons=
+
+        basicFilterReasons(
+            target,
+            opt
+        );
+
+
+    const targetQuadDetails=
+
+        getQuadKeys(target)
+            .map(q=>({
+
+                key:q,
+
+                freq:
+                    stats.quadFreq.get(q)
+                    ||
+                    0
+
+            }));
+
+
+    const targetHistoryCollisions=
+
+        targetQuadDetails
+            .filter(
+                x=>
+                    x.freq>0
+            );
+
+
+    const targetCanBeGenerated=
+
+        missingTargetNumbers.length===0;
+
+
+    const targetPassesBasic=
+
+        targetBasicReasons.length===0;
+
+
+    const targetPassesHistory=
+
+        !hardHistoryApplied
+        ||
+        targetHistoryCollisions.length===0;
 
 
     // -------------------------------------------------
@@ -1488,7 +2095,24 @@ function runGenerate(){
     lastResult=
 
         selected.map(
-            x=>x.comb
+            x=>({
+
+                comb:
+                    x.comb,
+
+                surpriseNumber:
+                    x.surprise.number,
+
+                surpriseScore:
+                    x.surprise.score,
+
+                surpriseBonus:
+                    x.surpriseBonus,
+
+                score:
+                    x.score
+
+            })
         );
 
 
@@ -1496,9 +2120,9 @@ function runGenerate(){
 
         lastResult.findIndex(
 
-            c=>
+            x=>
                 sameComb(
-                    c,
+                    x.comb,
                     target
                 )
 
@@ -1525,19 +2149,50 @@ function runGenerate(){
         afterHistory.length;
 
 
-    targetRank.textContent=
+    if(
+        !targetCanBeGenerated
+    ){
 
+        targetRank.textContent=
+            'Thiếu số: '
+            +
+            missingTargetNumbers.join(' ');
+
+    }
+    else if(
+        !targetPassesBasic
+    ){
+
+        targetRank.textContent=
+            'Lọc cơ bản: '
+            +
+            targetBasicReasons.join(', ');
+
+    }
+    else if(
+        !targetPassesHistory
+    ){
+
+        targetRank.textContent=
+            'Trùng bộ 4 lịch sử';
+
+    }
+    else if(
         rankIndex>=0
+    ){
 
-        ?
+        targetRank.textContent=
+            String(
+                rankIndex+1
+            );
 
-        String(
-            rankIndex+1
-        )
+    }
+    else{
 
-        :
+        targetRank.textContent=
+            'Không xác định';
 
-        'Bị loại';
+    }
 
 
     targetIn400.textContent=
@@ -1551,6 +2206,19 @@ function runGenerate(){
         :
 
         'Không';
+
+
+    surpriseState.textContent=
+
+        surpriseEnabled
+
+        ?
+
+        `ON (w=${surpriseWeight})`
+
+        :
+
+        'OFF';
 
 
     timeTaken.textContent=
@@ -1605,14 +2273,64 @@ function runGenerate(){
                         'b';
 
 
+                    const displayNumbers=
+
+                        x.comb
+
+                            .map(
+
+                                n=>
+
+                                    surpriseEnabled
+                                    &&
+                                    n===x.surprise.number
+
+                                    ?
+
+                                    `<span class="surprise-num">${n}</span>`
+
+                                    :
+
+                                    String(n)
+
+                            )
+
+                            .join(' ');
+
+
+                    const surpriseTitle=
+
+                        surpriseEnabled
+
+                        ?
+
+                        ` | bất ngờ ${x.surprise.number}`
+                        +
+                        ` | độ bất ngờ ${(x.surprise.score*100).toFixed(1)}%`
+                        +
+                        ` | bonus ${x.surpriseBonus.toFixed(2)}`
+
+                        :
+
+                        '';
+
+
                     return `
 
                         <span
                             class="${cls}"
-                            title="Hạng chọn ${i+1} | điểm ${x.score.toFixed(2)}"
+                            title="Hạng chọn ${i+1} | điểm ${x.score.toFixed(2)} | điểm nền ${x.baseScore.toFixed(2)}${surpriseTitle}"
                         >
 
-                            ${x.comb.join(' ')}
+                            ${displayNumbers}
+
+                            ${
+                                surpriseEnabled
+                                ?
+                                `<span class="surprise-tag">✨</span>`
+                                :
+                                ''
+                            }
 
                         </span>
 
@@ -1629,43 +2347,30 @@ function runGenerate(){
 // PHÂN TÍCH 5 BỘ 4 CỦA MỤC TIÊU
 // =================================================
 
-    const targetQuads=
-        getQuadKeys(
-            target
-        );
-
-
     const collisionRows=
 
-        targetQuads
+        targetQuadDetails
 
             .map(
 
-                q=>{
-
-                    const f=
-
-                        stats.quadFreq.get(q)
-                        ||
-                        0;
-
+                x=>{
 
                     return `
 
                     <tr>
 
                         <td>
-                            ${q.replaceAll(',',' ')}
+                            ${x.key.replaceAll(',',' ')}
                         </td>
 
                         <td>
-                            ${f}
+                            ${x.freq}
                         </td>
 
                         <td>
 
                             ${
-                                f===0
+                                x.freq===0
                                 ?
                                 'Mới'
                                 :
@@ -1689,6 +2394,111 @@ function runGenerate(){
 // BẢNG PHÂN TÍCH MỤC TIÊU
 // =================================================
 
+    const targetSurprise=
+
+        getSurpriseInfo(
+            target,
+            stats
+        );
+
+
+    const diagnosticRows=`
+
+        <tr>
+            <td><b>Yếu tố bất ngờ mục tiêu</b></td>
+            <td colspan="2">
+                ${
+                    surpriseEnabled
+                    ?
+                    `Số <b>${targetSurprise.number}</b> • độ bất ngờ ${(targetSurprise.score*100).toFixed(1)}% • tần suất lịch sử ${targetSurprise.numFreq}`
+                    :
+                    'Đang tắt'
+                }
+            </td>
+        </tr>
+
+        <tr>
+            <td><b>Có đủ trong dãy đầu vào?</b></td>
+            <td colspan="2">
+                ${
+                    targetCanBeGenerated
+                    ?
+                    'Có'
+                    :
+                    'Không — thiếu: <b>'
+                    +
+                    missingTargetNumbers.join(' ')
+                    +
+                    '</b>'
+                }
+            </td>
+        </tr>
+
+        <tr>
+            <td><b>Qua lọc cơ bản?</b></td>
+            <td colspan="2">
+                ${
+                    targetPassesBasic
+                    ?
+                    'Có'
+                    :
+                    'Không — '
+                    +
+                    targetBasicReasons.join(', ')
+                }
+            </td>
+        </tr>
+
+        <tr>
+            <td><b>Backtest lịch sử</b></td>
+            <td colspan="2">
+                ${
+                    chkBacktestExcludeTarget.checked
+                    ?
+                        (
+                            backtestRemoved.removed
+                            ?
+                            'Đã tự bỏ 1 dòng trùng chính xác bộ mục tiêu ở dòng lịch sử #'
+                            +
+                            (backtestRemoved.removedIndex+1)
+                            :
+                            'Không tìm thấy dòng lịch sử trùng chính xác để bỏ'
+                        )
+                    :
+                    'Tắt — dùng nguyên lịch sử'
+                }
+            </td>
+        </tr>
+
+        <tr>
+            <td><b>Lịch sử dùng để học</b></td>
+            <td colspan="2">
+                ${history.length}/${historyRaw.length} dòng
+            </td>
+        </tr>
+
+        <tr>
+            <td><b>Xử lý bộ 4 lịch sử</b></td>
+            <td colspan="2">
+                ${
+                    hardHistoryApplied
+                    ?
+                    'Lọc cứng ON — ứng viên có bộ 4 lịch sử bị loại'
+                    :
+                        (
+                            historyFallbackUsed
+                            ?
+                            'Đã tự fallback: lọc cứng làm 0 ứng viên, chuyển sang chấm điểm'
+                            :
+                            'Chấm điểm — không loại cứng bộ 4 lịch sử'
+                        )
+                }
+            </td>
+        </tr>
+
+    `;
+
+
     targetInfo.innerHTML=`
 
         <table>
@@ -1703,6 +2513,8 @@ function runGenerate(){
                 </th>
 
             </tr>
+
+            ${diagnosticRows}
 
             <tr>
 
@@ -1741,15 +2553,104 @@ function runGenerate(){
 
         statusEl.textContent=
 
-            `✅ Đã tạo ${lastResult.length} bộ. Bộ mục tiêu ${target.join(' ')} nằm ở vị trí #${targetSelectedIndex+1} trong danh sách chọn.`;
+            `✅ Đã tạo ${lastResult.length} bộ${surpriseEnabled ? ' có yếu tố bất ngờ' : ''}. Bộ mục tiêu ${target.join(' ')} nằm ở vị trí #${targetSelectedIndex+1} trong danh sách chọn.`;
 
     }
 
     else{
 
+        let reason='';
+
+
+        if(
+            !targetCanBeGenerated
+        ){
+
+            reason=
+                `không thể sinh vì thiếu số ${missingTargetNumbers.join(' ')} trong Dãy số đầu vào`;
+
+        }
+        else if(
+            !targetPassesBasic
+        ){
+
+            reason=
+                `bị lọc cơ bản: ${targetBasicReasons.join(', ')}`;
+
+        }
+        else if(
+            !targetPassesHistory
+        ){
+
+            reason=
+                `bị lọc cứng do có ${targetHistoryCollisions.length} bộ 4 đã xuất hiện trong lịch sử dùng để học`;
+
+        }
+        else if(
+            rankIndex>=0
+        ){
+
+            reason=
+                `đứng hạng ${rankIndex+1} trước bước chống trùng 4/5 nhưng bị loại ở bước chọn cuối`;
+
+        }
+        else{
+
+            reason=
+                'không tìm thấy trong danh sách xếp hạng';
+
+        }
+
+
+        let pipeline='';
+
+
+        if(
+            lastResult.length===0
+        ){
+
+            if(
+                basic.length===0
+            ){
+
+                pipeline=
+                    ' Không còn ứng viên nào sau bộ lọc cơ bản.';
+
+            }
+            else if(
+                afterHistory.length===0
+            ){
+
+                pipeline=
+                    ' Không còn ứng viên để xếp hạng.';
+
+            }
+            else{
+
+                pipeline=
+                    ' Có ứng viên để xếp hạng nhưng bước chọn chống trùng 4/5 không chọn được bộ nào.';
+
+            }
+
+        }
+
+
+        const fallbackMsg=
+
+            historyFallbackUsed
+
+            ?
+
+            ' Lưu ý: lọc cứng bộ 4 lịch sử đã làm sạch 100% ứng viên nên hệ thống tự chuyển sang chế độ chấm điểm.'
+
+            :
+
+            '';
+
+
         statusEl.textContent=
 
-            `⚠️ Đã tạo ${lastResult.length} bộ nhưng bộ mục tiêu ${target.join(' ')} chưa vào danh sách. Hạng trước khi áp dụng chống trùng 4 là ${rankIndex>=0 ? rankIndex+1 : 'bị loại bởi lịch sử/bộ lọc'}.`;
+            `⚠️ Đã tạo ${lastResult.length} bộ. Bộ mục tiêu ${target.join(' ')} chưa vào danh sách vì ${reason}.${pipeline}${fallbackMsg}`;
 
     }
 
@@ -1784,7 +2685,18 @@ function exportTxt(){
                 lastResult
 
                     .map(
-                        c=>c.join(' ')
+                        x=>
+                            x.comb.join(' ')
+                            +
+                            (
+                                chkSurprise.checked
+                                ?
+                                '  # bất ngờ: '
+                                +
+                                x.surpriseNumber
+                                :
+                                ''
+                            )
                     )
 
                     .join('\n')
