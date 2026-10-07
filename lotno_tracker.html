@@ -92,6 +92,8 @@
           <option value="2">Lần 2</option>
         </select>
         <button class="secondary" id="todayBtn">Hôm nay</button>
+        <button class="secondary" id="prevDrawBtn">Lùi</button>
+        <button class="secondary" id="nextDrawBtn">Tới</button>
       </div>
 
       <h3>Bộ loại bỏ thường (1–35)</h3>
@@ -241,6 +243,33 @@
     const d = new Date();
     const off = d.getTimezoneOffset();
     return new Date(d.getTime() - off*60000).toISOString().slice(0,10);
+  }
+
+  function shiftISODate(dateStr, days){
+    if(!dateStr) dateStr = todayISO();
+    const [y,m,d] = dateStr.split('-').map(Number);
+    const dt = new Date(y, (m||1)-1, d||1);
+    dt.setDate(dt.getDate() + days);
+    const off = dt.getTimezoneOffset();
+    return new Date(dt.getTime() - off*60000).toISOString().slice(0,10);
+  }
+
+  // Duyệt tuần tự: ... ngày N/L1 -> ngày N/L2 -> ngày N+1/L1 -> ...
+  function navigateDraw(step){
+    let date = $('drawDate').value || todayISO();
+    let session = currentSession();
+
+    if(step > 0){
+      if(session === 1) session = 2;
+      else { date = shiftISODate(date, 1); session = 1; }
+    }else{
+      if(session === 2) session = 1;
+      else { date = shiftISODate(date, -1); session = 2; }
+    }
+
+    $('drawDate').value = date;
+    $('drawSession').value = String(session);
+    loadRecordIntoUI(date, session);
   }
 
   function compareRecords(a,b){
@@ -589,21 +618,38 @@
     $('drawDate').value = todayISO();
     loadRecordIntoUI($('drawDate').value, currentSession());
   };
+  $('prevDrawBtn').onclick = () => navigateDraw(-1);
+  $('nextDrawBtn').onclick = () => navigateDraw(1);
   $('drawDate').onchange = () => loadRecordIntoUI($('drawDate').value, currentSession());
   $('drawSession').onchange = () => loadRecordIntoUI($('drawDate').value, currentSession());
 
   $('savePredictionBtn').onclick = async () => {
     const date = $('drawDate').value;
     if(!date) return alert('Hãy chọn ngày.');
+    const session = currentSession();
+    const old = getRecord(date, session) || {date,session,normalActual:[],specialActual:[]};
+    // Giữ nguyên các số kết quả người dùng đang click trên giao diện, kể cả chưa bấm Lưu kết quả.
+    const pendingNormalActual = new Set(ui.normalActual);
+    const pendingSpecialActual = new Set(ui.specialActual);
     try{
+      // Chỉ cập nhật bộ dự đoán. Giữ nguyên kết quả sau kỳ quay nếu đã nhập trước đó.
       await upsertRecord({
+        ...old,
         date,
-        session: currentSession(),
+        session,
         normalExclude:[...ui.normalExclude].sort((a,b)=>a-b),
-        specialExclude:[...ui.specialExclude].sort((a,b)=>a-b)
+        specialExclude:[...ui.specialExclude].sort((a,b)=>a-b),
+        normalActual:Array.isArray(old.normalActual) ? old.normalActual : [],
+        specialActual:Array.isArray(old.specialActual) ? old.specialActual : []
       });
       renderEverything();
-      alert(`Đã lưu dự đoán ngày ${date} - Lần ${currentSession()} lên Firebase.`);
+      // Khôi phục đúng các số kết quả đang click trước khi lưu dự đoán.
+      // Các số này chỉ được ghi vào Firebase khi người dùng bấm "Lưu kết quả & tính tỷ lệ".
+      ui.normalActual = pendingNormalActual;
+      ui.specialActual = pendingSpecialActual;
+      renderAllChips();
+      renderCurrentScore();
+      alert(`Đã lưu dự đoán ngày ${date} - Lần ${session} lên Firebase.`);
     }catch(err){
       alert('Dữ liệu đã lưu trên máy nhưng Firebase chưa ghi được. Kiểm tra Rules / databaseURL.');
     }
