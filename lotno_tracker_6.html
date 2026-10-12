@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Theo dõi 6/45 - Firebase - Thứ Tư/Sáu/Chủ Nhật</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#fff; --text:#172033; --muted:#697386;
+    --line:#dfe5ef; --accent:#3b82f6; --danger:#ef4444; --ok:#16a34a;
+    --warn:#f59e0b; --chip:#eef3fb; --chip2:#e8f0ff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
+  .wrap{max-width:1200px;margin:0 auto;padding:18px}
+  h1{font-size:25px;margin:0 0 8px}
+  h2{font-size:19px;margin:0 0 12px}
+  h3{font-size:16px;margin:12px 0 8px}
+  .note{font-size:13px;color:var(--muted);line-height:1.45}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 3px 12px rgba(20,30,50,.04)}
+  .full{grid-column:1/-1}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  label{font-size:13px;font-weight:700}
+  input[type=date], input[type=number]{
+    border:1px solid var(--line);border-radius:9px;padding:9px 10px;background:#fff;color:var(--text)
+  }
+  .chips{display:grid;grid-template-columns:repeat(9,1fr);gap:8px}
+  .chip{
+    border:1px solid var(--line);background:var(--chip);border-radius:10px;padding:9px 0;
+    text-align:center;cursor:pointer;user-select:none;font-weight:700;transition:.15s;
+  }
+  .chip:hover{transform:translateY(-1px)}
+  .chip.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .chip.actual{background:#111827;color:#fff;border-color:#111827}
+  .count{font-weight:700;color:var(--accent)}
+  button{border:none;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer}
+  .primary{background:var(--accent);color:#fff}
+  .secondary{background:#eef2f7;color:var(--text)}
+  .danger{background:var(--danger);color:#fff}
+  .success{background:var(--ok);color:#fff}
+  .warn{background:var(--warn);color:#fff}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .stat{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fafcff}
+  .stat .v{font-size:22px;font-weight:800;margin-top:4px}
+  .stat .k{font-size:12px;color:var(--muted)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+  th{background:#f8fafc;position:sticky;top:0}
+  .table-wrap{max-height:430px;overflow:auto;border:1px solid var(--line);border-radius:12px}
+  .badge{display:inline-block;padding:3px 7px;border-radius:999px;background:#eef2f7;margin:2px;font-size:12px}
+  .badge.ok{background:#dcfce7;color:#166534}
+  .badge.bad{background:#fee2e2;color:#991b1b}
+  .rec-box{border:1px solid var(--line);border-radius:12px;padding:12px}
+  .score-list{display:flex;flex-wrap:wrap;gap:7px}
+  .score-chip{padding:7px 9px;border-radius:9px;background:var(--chip2);font-size:13px}
+  .small{font-size:12px;color:var(--muted)}
+  .cloud-status{display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:700;background:#eef2f7;color:#475569}
+  .cloud-status.ok{background:#dcfce7;color:#166534}
+  .cloud-status.bad{background:#fee2e2;color:#991b1b}
+  .cloud-status.wait{background:#fef3c7;color:#92400e}
+  .draw-day{display:inline-block;margin-top:8px;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:700}
+  .draw-day.ok{background:#dcfce7;color:#166534}
+  .draw-day.bad{background:#fee2e2;color:#991b1b}
+  .footer-space{height:30px}
+  @media(max-width:800px){
+    .grid{grid-template-columns:1fr}.full{grid-column:auto}
+    .chips{grid-template-columns:repeat(5,1fr)}
+    .stats{grid-template-columns:repeat(2,1fr)}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Theo dõi 6/45 — 1 kỳ/ngày • Thứ Tư / Thứ Sáu / Chủ Nhật</h1>
+  <div class="note">
+    Mô hình: chọn <b>6 số từ 1–45</b>, không có số đặc biệt.
+    Mỗi ngày quay chỉ có <b>1 kỳ</b> vào <b>Thứ Tư, Thứ Sáu và Chủ Nhật</b>.
+    Dữ liệu được lưu riêng tại nhánh <b>lotnoTracker/6_45</b> trên cùng Firebase Realtime Database; localStorage dùng làm cache dự phòng.
+  </div>
+  <div id="cloudStatus" class="cloud-status wait">● Đang kết nối Firebase...</div>
+
+  <div class="grid" style="margin-top:16px">
+    <section class="card">
+      <h2>1) Dự đoán trước kỳ quay</h2>
+      <div class="row">
+        <label>Ngày:</label>
+        <input id="drawDate" type="date">
+        <button class="secondary" id="todayBtn">Hôm nay</button>
+        <button class="secondary" id="prevDrawBtn">Lùi</button>
+        <button class="secondary" id="nextDrawBtn">Tới</button>
+      </div>
+      <div id="drawDayStatus" class="draw-day ok">Ngày quay hợp lệ</div>
+
+      <h3>Bộ loại bỏ (1–45)</h3>
+      <div class="note">Đã chọn: <span class="count" id="normalExcludeCount">0</span> số</div>
+      <div id="normalExcludeChips" class="chips" style="margin-top:8px"></div>
+
+      <div class="row" style="margin-top:14px">
+        <button class="primary" id="savePredictionBtn">Lưu dự đoán</button>
+        <button class="secondary" id="clearPredictionBtn">Bỏ chọn</button>
+        <button class="warn" id="applyRecommendBtn">Áp dụng gợi ý</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>2) Nhập kết quả sau kỳ quay</h2>
+      <div class="note">Chọn đúng <b>6 số</b> từ 1–45.</div>
+
+      <h3>Kết quả (6 số)</h3>
+      <div class="note">Đã chọn: <span class="count" id="normalActualCount">0</span>/6</div>
+      <div id="normalActualChips" class="chips" style="margin-top:8px"></div>
+
+      <div class="row" style="margin-top:14px">
+        <button class="success" id="saveResultBtn">Lưu kết quả & tính tỷ lệ</button>
+        <button class="secondary" id="clearResultBtn">Bỏ chọn kết quả</button>
+      </div>
+      <div id="currentScore" style="margin-top:14px"></div>
+    </section>
+
+    <section class="card full">
+      <h2>3) Thống kê chu kỳ hiện tại</h2>
+      <div class="stats">
+        <div class="stat"><div class="k">Số kỳ đã có kết quả</div><div class="v" id="sDraws">0</div></div>
+        <div class="stat"><div class="k">Số dự đoán đã được chấm</div><div class="v" id="sPredictions">0</div></div>
+        <div class="stat"><div class="k">Khớp bộ loại bỏ</div><div class="v" id="sNormalAcc">—</div></div>
+        <div class="stat"><div class="k">Tổng số va chạm</div><div class="v" id="sCollisions">0</div></div>
+      </div>
+      <div class="note" style="margin-top:10px">
+        Ví dụ: bạn loại 10 số, kết quả thực tế có 1 số nằm trong bộ loại → 9/10 dự đoán loại đúng = 90%.
+      </div>
+    </section>
+
+    <section class="card full">
+      <h2>4) Gợi ý bộ loại bỏ từ lịch sử</h2>
+      <div class="note">
+        Thuật toán xếp hạng theo dữ liệu 6/45 của chính chu kỳ: tỷ lệ vắng mặt toàn lịch sử + tỷ lệ vắng mặt 10 kỳ gần nhất +
+        hiệu quả thực tế khi số đó từng được đưa vào bộ loại bỏ. Đây là thống kê thực nghiệm, không đảm bảo dự đoán xổ số chính xác hơn.
+      </div>
+
+      <div class="row" style="margin:12px 0">
+        <label>Số lượng gợi ý:</label>
+        <input id="recommendNormalN" type="number" min="0" max="39" value="10" style="width:80px">
+        <button class="primary" id="refreshRecommendBtn">Tính gợi ý</button>
+      </div>
+
+      <div class="rec-box">
+        <b>Gợi ý loại bỏ</b>
+        <div id="normalRecommend" class="score-list" style="margin-top:8px"></div>
+      </div>
+    </section>
+
+    <section class="card full">
+      <h2>5) Lịch sử</h2>
+      <div class="row" style="margin-bottom:10px">
+        <button class="secondary" id="exportBtn">Xuất JSON</button>
+        <button class="secondary" id="importBtn">Nhập JSON</button>
+        <input type="file" id="importFile" accept=".json" style="display:none">
+        <button class="danger" id="resetBtn">Reset chu kỳ 6/45</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Ngày</th><th>Thứ</th><th>Loại bỏ</th><th>Kết quả 6 số</th><th>Khớp loại</th><th>Va chạm</th>
+            </tr>
+          </thead>
+          <tbody id="historyBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+  <div class="footer-space"></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+<script>
+(() => {
+  const STORAGE_KEY = 'tracker_6_45_v1';
+  const FIREBASE_ROOT = 'lotnoTracker/6_45';
+  const DRAW_DAYS = [0, 3, 5]; // Chủ Nhật, Thứ Tư, Thứ Sáu
+
+  // Cùng Firebase với bản 6/35, nhưng dữ liệu 6/45 được tách riêng tại lotnoTracker/6_45.
+  const firebaseConfig = {
+    apiKey: "AIzaSyCT_F58W8o29U8ky9HsZDRF8Sznr_NR384",
+    authDomain: "lotnotracker.firebaseapp.com",
+    databaseURL: "https://lotnotracker-default-rtdb.firebaseio.com",
+    projectId: "lotnotracker",
+    storageBucket: "lotnotracker.firebasestorage.app",
+    messagingSenderId: "818637463490",
+    appId: "1:818637463490:web:2c0edf80331341a065005b"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+  const rootRef = db.ref(FIREBASE_ROOT);
+  const recordsRef = rootRef.child('records');
+
+  let state = { records: [] };
+  let firebaseReady = false;
+  let ui = {
+    normalExclude: new Set(),
+    normalActual: new Set(),
+    recommendation: []
+  };
+
+  const $ = id => document.getElementById(id);
+
+  function setCloudStatus(text, type='wait'){
+    const el = $('cloudStatus');
+    el.className = 'cloud-status ' + type;
+    el.textContent = text;
+  }
+
+  function todayISO(){
+    const d = new Date();
+    const off = d.getTimezoneOffset();
+    return new Date(d.getTime() - off*60000).toISOString().slice(0,10);
+  }
+
+  function parseLocalDate(dateStr){
+    if(!dateStr) return null;
+    const [y,m,d] = dateStr.split('-').map(Number);
+    if(!y || !m || !d) return null;
+    return new Date(y, m-1, d, 12, 0, 0, 0);
+  }
+
+  function dateToISO(dt){
+    const y = dt.getFullYear();
+    const m = String(dt.getMonth()+1).padStart(2,'0');
+    const d = String(dt.getDate()).padStart(2,'0');
+    return `${y}-${m}-${d}`;
+  }
+
+  function shiftISODate(dateStr, days){
+    const dt = parseLocalDate(dateStr) || parseLocalDate(todayISO());
+    dt.setDate(dt.getDate() + days);
+    return dateToISO(dt);
+  }
+
+  function isScheduledDrawDate(dateStr){
+    const dt = parseLocalDate(dateStr);
+    return !!dt && DRAW_DAYS.includes(dt.getDay());
+  }
+
+  function dayName(dateStr){
+    const dt = parseLocalDate(dateStr);
+    if(!dt) return '';
+    return ['Chủ Nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'][dt.getDay()];
+  }
+
+  function updateDrawDayStatus(){
+    const date = $('drawDate').value;
+    const el = $('drawDayStatus');
+    if(isScheduledDrawDate(date)){
+      el.className = 'draw-day ok';
+      el.textContent = `${dayName(date)} — ngày quay hợp lệ`;
+    }else{
+      el.className = 'draw-day bad';
+      el.textContent = date ? `${dayName(date)} — không có kỳ quay 6/45` : 'Hãy chọn ngày';
+    }
+  }
+
+  // Duyệt đúng chu kỳ: Thứ Tư -> Thứ Sáu -> Chủ Nhật -> Thứ Tư...
+  function navigateDraw(step){
+    let date = $('drawDate').value || todayISO();
+    let probe = date;
+    for(let i=0;i<8;i++){
+      probe = shiftISODate(probe, step > 0 ? 1 : -1);
+      if(isScheduledDrawDate(probe)){
+        $('drawDate').value = probe;
+        loadRecordIntoUI(probe);
+        updateDrawDayStatus();
+        return;
+      }
+    }
+  }
+
+  function compareRecords(a,b){
+    return String(a.date).localeCompare(String(b.date));
+  }
+
+  function normalizeRecord(r, fallbackDate=null){
+    if(!r || typeof r !== 'object') return null;
+    const date = String(r.date || fallbackDate || '');
+    if(!date) return null;
+    return {
+      ...r,
+      date,
+      normalExclude: Array.isArray(r.normalExclude) ? r.normalExclude : [],
+      normalActual: Array.isArray(r.normalActual) ? r.normalActual : [],
+      updatedAt: r.updatedAt || null
+    };
+  }
+
+  function normalizeState(obj){
+    if(!obj || !Array.isArray(obj.records)) return {records:[]};
+    const records = obj.records
+      .map(r => normalizeRecord(r))
+      .filter(Boolean)
+      .sort(compareRecords);
+    return {records};
+  }
+
+  function loadLocal(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw) state = normalizeState(JSON.parse(raw));
+    }catch(e){
+      console.warn('Không đọc được localStorage:', e);
+    }
+  }
+
+  function saveLocal(){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  function recordsArrayToObject(records){
+    const out = {};
+    records.forEach(r => {
+      const rec = normalizeRecord(r);
+      if(!rec) return;
+      out[rec.date] = {
+        date: rec.date,
+        normalExclude: rec.normalExclude,
+        normalActual: rec.normalActual,
+        updatedAt: rec.updatedAt || new Date().toISOString()
+      };
+    });
+    return out;
+  }
+
+  function firebaseObjectToRecords(obj){
+    if(!obj || typeof obj !== 'object') return [];
+    return Object.entries(obj)
+      .map(([dateKey, value]) => normalizeRecord(value, dateKey))
+      .filter(Boolean)
+      .sort(compareRecords);
+  }
+
+  async function save(){
+    saveLocal();
+    setCloudStatus('● Đang đồng bộ 6/45 lên Firebase...', 'wait');
+
+    const payload = {
+      records: recordsArrayToObject(state.records),
+      meta: {
+        game: '6_45',
+        schemaVersion: 1,
+        drawDays: ['Wednesday','Friday','Sunday'],
+        numbersPerDraw: 6,
+        numberRange: [1,45],
+        updatedAt: new Date().toISOString(),
+        source: 'lotno_tracker_6_45.html'
+      }
+    };
+
+    try{
+      await rootRef.set(payload);
+      setCloudStatus('● Firebase 6/45 đã đồng bộ', 'ok');
+    }catch(err){
+      console.error('Firebase write error:', err);
+      setCloudStatus('● Firebase lỗi ghi 6/45 - dữ liệu vẫn còn trong máy', 'bad');
+      throw err;
+    }
+  }
+
+  function getRecord(date){
+    return state.records.find(r => r.date === date);
+  }
+
+  async function upsertRecord(rec){
+    const clean = normalizeRecord({...rec, updatedAt:new Date().toISOString()});
+    const i = state.records.findIndex(r => r.date === clean.date);
+    if(i >= 0) state.records[i] = {...state.records[i], ...clean};
+    else state.records.push(clean);
+    state.records.sort(compareRecords);
+    await save();
+  }
+
+  function makeChips(containerId, max, setObj, mode, maxSelect=null){
+    const el = $(containerId);
+    el.innerHTML = '';
+    for(let n=1;n<=max;n++){
+      const b = document.createElement('div');
+      b.className = 'chip';
+      b.textContent = n;
+      if(setObj.has(n)) b.classList.add(mode === 'actual' ? 'actual' : 'active');
+      b.onclick = () => {
+        if(setObj.has(n)) setObj.delete(n);
+        else{
+          if(maxSelect && setObj.size >= maxSelect) return;
+          setObj.add(n);
+        }
+        renderAllChips();
+      };
+      el.appendChild(b);
+    }
+  }
+
+  function renderAllChips(){
+    makeChips('normalExcludeChips',45,ui.normalExclude,'exclude');
+    makeChips('normalActualChips',45,ui.normalActual,'actual',6);
+    $('normalExcludeCount').textContent = ui.normalExclude.size;
+    $('normalActualCount').textContent = ui.normalActual.size;
+  }
+
+  function scoreRecord(r){
+    if(!r || !Array.isArray(r.normalActual) || r.normalActual.length !== 6) return null;
+    const nEx = r.normalExclude || [];
+    const actual = new Set(r.normalActual);
+    const correct = nEx.filter(x => !actual.has(x)).length;
+    const collision = nEx.filter(x => actual.has(x));
+    return {
+      normalCorrect: correct,
+      normalTotal: nEx.length,
+      normalPct: nEx.length ? correct/nEx.length*100 : null,
+      nCollision: collision
+    };
+  }
+
+  function pct(v){ return v==null ? '—' : v.toFixed(1)+'%'; }
+
+  function renderCurrentScore(){
+    const r = getRecord($('drawDate').value);
+    const s = scoreRecord(r);
+    if(!s){ $('currentScore').innerHTML=''; return; }
+    $('currentScore').innerHTML = `
+      <div class="rec-box">
+        <b>Kết quả đánh giá ngày ${r.date} (${dayName(r.date)})</b><br>
+        Bộ loại bỏ: <b>${s.normalCorrect}/${s.normalTotal} = ${pct(s.normalPct)}</b><br>
+        <span class="small">Số đã loại nhưng lại xuất hiện: [${s.nCollision.join(', ')||'không có'}]</span>
+      </div>`;
+  }
+
+  function renderStats(){
+    const scored = state.records.map(r => ({r,s:scoreRecord(r)})).filter(x=>x.s);
+    $('sDraws').textContent = scored.length;
+    const withPrediction = scored.filter(({s}) => s.normalTotal > 0);
+    $('sPredictions').textContent = withPrediction.length;
+
+    let correct=0,total=0,collisions=0;
+    scored.forEach(({s})=>{
+      correct += s.normalCorrect;
+      total += s.normalTotal;
+      collisions += s.nCollision.length;
+    });
+    $('sNormalAcc').textContent = total ? pct(correct/total*100) : '—';
+    $('sCollisions').textContent = collisions;
+  }
+
+  function badges(arr, cls=''){
+    if(!arr || !arr.length) return '—';
+    return arr.map(x=>`<span class="badge ${cls}">${x}</span>`).join('');
+  }
+
+  function renderHistory(){
+    const body = $('historyBody');
+    body.innerHTML = '';
+    [...state.records].sort((a,b)=>compareRecords(b,a)).forEach(r=>{
+      const s = scoreRecord(r);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><b>${r.date}</b></td>
+        <td><span class="badge">${dayName(r.date)}</span></td>
+        <td>${badges(r.normalExclude)}</td>
+        <td>${badges(r.normalActual,'ok')}</td>
+        <td>${s ? `${s.normalCorrect}/${s.normalTotal} (${pct(s.normalPct)})` : '—'}</td>
+        <td>${s ? badges(s.nCollision,'bad') : '—'}</td>`;
+      tr.onclick = () => {
+        $('drawDate').value = r.date;
+        loadRecordIntoUI(r.date);
+        updateDrawDayStatus();
+      };
+      body.appendChild(tr);
+    });
+  }
+
+  function loadRecordIntoUI(date){
+    const r = getRecord(date);
+    ui.normalExclude = new Set(r?.normalExclude || []);
+    ui.normalActual = new Set(r?.normalActual || []);
+    renderAllChips();
+    renderCurrentScore();
+  }
+
+  function rankNumbers(){
+    const draws = state.records
+      .filter(r => Array.isArray(r.normalActual) && r.normalActual.length === 6)
+      .sort(compareRecords);
+    const recent = draws.slice(-10);
+    const rows = [];
+
+    for(let n=1;n<=45;n++){
+      const appeared = draws.filter(r => r.normalActual.includes(n)).length;
+      const recentAppeared = recent.filter(r => r.normalActual.includes(n)).length;
+      const absenceRate = draws.length ? 1 - appeared/draws.length : 0.5;
+      const recentAbsence = recent.length ? 1 - recentAppeared/recent.length : 0.5;
+      const exTrials = draws.filter(r => (r.normalExclude||[]).includes(n));
+      const exSuccess = exTrials.filter(r => !r.normalActual.includes(n)).length;
+      const userExAcc = (exSuccess + 1) / (exTrials.length + 2);
+      const score = 0.55*absenceRate + 0.25*recentAbsence + 0.20*userExAcc;
+      rows.push({n,score,absenceRate,recentAbsence,userExAcc,trials:exTrials.length});
+    }
+    return rows.sort((a,b)=>b.score-a.score || a.n-b.n);
+  }
+
+  function calculateRecommendation(){
+    const nN = Math.max(0, Math.min(39, Number($('recommendNormalN').value)||0));
+    ui.recommendation = rankNumbers().slice(0,nN);
+    renderRecommendation();
+  }
+
+  function renderRecommendation(){
+    $('normalRecommend').innerHTML = ui.recommendation.length ? ui.recommendation.map(x =>
+      `<span class="score-chip" title="Vắng toàn lịch sử: ${(x.absenceRate*100).toFixed(1)}%; vắng 10 kỳ gần: ${(x.recentAbsence*100).toFixed(1)}%; hiệu quả loại riêng số này: ${(x.userExAcc*100).toFixed(1)}% trên ${x.trials} lần"><b>${x.n}</b> · score ${(x.score*100).toFixed(1)}</span>`
+    ).join('') : '<span class="small">Chưa có gợi ý.</span>';
+  }
+
+  function renderEverything(){
+    renderAllChips();
+    renderStats();
+    renderHistory();
+    calculateRecommendation();
+    renderCurrentScore();
+    updateDrawDayStatus();
+  }
+
+  function ensureValidDrawDate(date){
+    if(!date){
+      alert('Hãy chọn ngày.');
+      return false;
+    }
+    if(!isScheduledDrawDate(date)){
+      alert(`Ngày ${date} là ${dayName(date)}, không phải ngày quay 6/45. Chỉ lưu vào Thứ Tư, Thứ Sáu hoặc Chủ Nhật.`);
+      return false;
+    }
+    return true;
+  }
+
+  function startFirebaseRealtimeSync(){
+    db.ref('.info/connected').on('value', snap => {
+      const connected = snap.val() === true;
+      if(connected){
+        firebaseReady = true;
+        setCloudStatus('● Firebase đã kết nối — nhánh 6/45', 'ok');
+      }else if(firebaseReady){
+        setCloudStatus('● Mất kết nối Firebase - đang dùng cache 6/45 trên máy', 'bad');
+      }
+    });
+
+    recordsRef.on('value', snapshot => {
+      const cloudRecords = firebaseObjectToRecords(snapshot.val());
+      if(cloudRecords.length || snapshot.exists()){
+        state = {records: cloudRecords};
+        saveLocal();
+        renderEverything();
+        loadRecordIntoUI($('drawDate').value);
+        updateDrawDayStatus();
+      }
+    }, err => {
+      console.error('Firebase read error:', err);
+      setCloudStatus('● Không đọc được Firebase 6/45: ' + err.code, 'bad');
+    });
+
+    // Nếu nhánh 6_45 trên Firebase đang trống nhưng localStorage đã có dữ liệu, tự migrate lên cloud.
+    recordsRef.once('value').then(async snapshot => {
+      if(!snapshot.exists() && state.records.length){
+        try{
+          await save();
+          setCloudStatus('● Đã chuyển dữ liệu local 6/45 lên Firebase', 'ok');
+        }catch(e){}
+      }
+    }).catch(err => console.error('Firebase initial load error:', err));
+  }
+
+  $('todayBtn').onclick = () => {
+    $('drawDate').value = todayISO();
+    loadRecordIntoUI($('drawDate').value);
+    updateDrawDayStatus();
+  };
+
+  $('prevDrawBtn').onclick = () => navigateDraw(-1);
+  $('nextDrawBtn').onclick = () => navigateDraw(1);
+
+  $('drawDate').onchange = () => {
+    loadRecordIntoUI($('drawDate').value);
+    updateDrawDayStatus();
+  };
+
+  $('savePredictionBtn').onclick = async () => {
+    const date = $('drawDate').value;
+    if(!ensureValidDrawDate(date)) return;
+
+    // Giữ nguyên các số kết quả người dùng đang click trên màn hình,
+    // đồng thời không xóa kết quả đã lưu trước đó khi lưu/chỉnh dự đoán.
+    const pendingActual = [...ui.normalActual];
+    const old = getRecord(date) || {date,normalExclude:[],normalActual:[]};
+
+    try{
+      await upsertRecord({
+        ...old,
+        date,
+        normalExclude:[...ui.normalExclude].sort((a,b)=>a-b),
+        normalActual:Array.isArray(old.normalActual) ? old.normalActual : []
+      });
+      ui.normalActual = new Set(pendingActual);
+      renderEverything();
+      renderAllChips();
+      alert(`Đã lưu dự đoán 6/45 ngày ${date} (${dayName(date)}) lên Firebase.`);
+    }catch(err){
+      ui.normalActual = new Set(pendingActual);
+      renderAllChips();
+      alert('Dữ liệu đã lưu trên máy nhưng Firebase 6/45 chưa ghi được. Kiểm tra Rules / databaseURL.');
+    }
+  };
+
+  $('saveResultBtn').onclick = async () => {
+    const date = $('drawDate').value;
+    if(!ensureValidDrawDate(date)) return;
+    if(ui.normalActual.size !== 6) return alert('Kết quả 6/45 phải chọn đúng 6 số.');
+
+    const old = getRecord(date) || {date,normalExclude:[],normalActual:[]};
+    try{
+      await upsertRecord({
+        ...old,
+        date,
+        normalActual:[...ui.normalActual].sort((a,b)=>a-b)
+      });
+      renderEverything();
+      alert(`Đã lưu kết quả 6/45 ngày ${date} (${dayName(date)}) lên Firebase và tính tỷ lệ khớp.`);
+    }catch(err){
+      alert('Dữ liệu đã lưu trên máy nhưng Firebase 6/45 chưa ghi được. Kiểm tra Rules / databaseURL.');
+    }
+  };
+
+  $('clearPredictionBtn').onclick = () => {
+    ui.normalExclude.clear();
+    renderAllChips();
+  };
+
+  $('clearResultBtn').onclick = () => {
+    ui.normalActual.clear();
+    renderAllChips();
+    renderCurrentScore();
+  };
+
+  $('refreshRecommendBtn').onclick = calculateRecommendation;
+
+  $('applyRecommendBtn').onclick = () => {
+    calculateRecommendation();
+    ui.normalExclude = new Set(ui.recommendation.map(x=>x.n));
+    renderAllChips();
+  };
+
+  $('resetBtn').onclick = async () => {
+    if(confirm('Reset toàn bộ chu kỳ 6/45? Chỉ dữ liệu trong nhánh lotnoTracker/6_45 sẽ bị xóa; dữ liệu 6/35 không bị ảnh hưởng.')){
+      state = {records:[]};
+      ui.normalExclude.clear();
+      ui.normalActual.clear();
+      ui.recommendation = [];
+      try{
+        await save();
+        renderEverything();
+        alert('Đã reset dữ liệu 6/45 trên Firebase.');
+      }catch(err){
+        renderEverything();
+        alert('Đã reset dữ liệu local 6/45 nhưng Firebase chưa ghi được.');
+      }
+    }
+  };
+
+  $('exportBtn').onclick = () => {
+    const backup = {
+      game:'6_45',
+      schemaVersion:1,
+      exportedAt:new Date().toISOString(),
+      records:state.records
+    };
+    const blob = new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = '6_45_tracker_backup.json';
+    a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  };
+
+  $('importBtn').onclick = () => $('importFile').click();
+
+  $('importFile').onchange = e => {
+    const f = e.target.files[0];
+    if(!f) return;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try{
+        const obj = JSON.parse(reader.result);
+        if(obj.game && obj.game !== '6_45'){
+          return alert('File JSON không phải dữ liệu 6/45.');
+        }
+        state = normalizeState(obj);
+        await save();
+        renderEverything();
+        loadRecordIntoUI($('drawDate').value);
+        alert('Đã nhập dữ liệu 6/45 và đồng bộ lên Firebase.');
+      }catch(err){
+        alert('File JSON không hợp lệ hoặc Firebase 6/45 chưa ghi được.');
+      }
+    };
+    reader.readAsText(f);
+  };
+
+  // Khởi động: đọc cache trước, sau đó Firebase đồng bộ realtime.
+  loadLocal();
+  $('drawDate').value = todayISO();
+  loadRecordIntoUI($('drawDate').value);
+  renderEverything();
+  startFirebaseRealtimeSync();
+})();
+</script>
+</body>
+</html>
